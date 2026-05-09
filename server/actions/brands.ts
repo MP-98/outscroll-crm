@@ -1,0 +1,56 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { requireProfile } from "@/lib/auth";
+import { brandSchema, brandPocSchema, type BrandInput, type BrandPocInput } from "@/lib/validations/brand";
+
+export async function createBrand(input: BrandInput) {
+  await requireProfile();
+  const data = brandSchema.parse(input);
+  const supabase = await createClient();
+  const { data: created, error } = await supabase
+    .from("brands")
+    .insert(data)
+    .select("id")
+    .single();
+  if (error) throw new Error(error.message);
+  revalidatePath("/brands");
+  redirect(`/brands/${created.id}`);
+}
+
+export async function updateBrand(id: string, input: BrandInput) {
+  await requireProfile();
+  const data = brandSchema.parse(input);
+  const supabase = await createClient();
+  const { error } = await supabase.from("brands").update(data).eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidatePath(`/brands/${id}`);
+  revalidatePath("/brands");
+}
+
+export async function upsertPoc(
+  brandId: string,
+  poc: BrandPocInput & { id?: string },
+) {
+  await requireProfile();
+  const data = brandPocSchema.parse(poc);
+  const supabase = await createClient();
+  if (poc.id) {
+    const { error } = await supabase.from("brand_pocs").update(data).eq("id", poc.id);
+    if (error) throw new Error(error.message);
+  } else {
+    const { error } = await supabase.from("brand_pocs").insert({ ...data, brand_id: brandId });
+    if (error) throw new Error(error.message);
+  }
+  revalidatePath(`/brands/${brandId}`);
+}
+
+export async function deletePoc(brandId: string, pocId: string) {
+  await requireProfile();
+  const supabase = await createClient();
+  const { error } = await supabase.from("brand_pocs").delete().eq("id", pocId);
+  if (error) throw new Error(error.message);
+  revalidatePath(`/brands/${brandId}`);
+}
