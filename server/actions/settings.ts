@@ -52,12 +52,23 @@ export async function updateProfile(input: { full_name: string; avatar_url: stri
   revalidatePath("/settings/profile");
 }
 
-export async function inviteTeammate(email: string, role: UserRole, full_name?: string) {
+export async function inviteTeammate(
+  email: string,
+  password: string,
+  role: UserRole,
+  full_name?: string,
+) {
   await requireRole("admin");
   if (!email.includes("@")) throw new Error("Invalid email");
+  if (!password || password.length < 8) {
+    throw new Error("Password must be at least 8 characters");
+  }
   const admin = createAdminClient();
-  const { data, error } = await admin.auth.admin.inviteUserByEmail(email, {
-    data: full_name ? { full_name } : undefined,
+  const { data, error } = await admin.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+    user_metadata: full_name ? { full_name } : undefined,
   });
   if (error) throw new Error(error.message);
   if (data.user) {
@@ -77,10 +88,79 @@ export async function inviteTeammate(email: string, role: UserRole, full_name?: 
   revalidatePath("/settings/team");
 }
 
-export async function updateTeammateRole(userId: string, role: UserRole) {
+export async function resetTeammatePassword(userId: string, password: string) {
   await requireRole("admin");
+  if (!password || password.length < 8) {
+    throw new Error("Password must be at least 8 characters");
+  }
+  const admin = createAdminClient();
+  // email_confirm: true clears Supabase's email-not-confirmed gate for legacy
+  // accounts created before we switched to direct createUser.
+  const { error } = await admin.auth.admin.updateUserById(userId, {
+    password,
+    email_confirm: true,
+  });
+  if (error) throw new Error(error.message);
+  revalidatePath("/settings/team");
+}
+
+export async function updateMyPassword(password: string) {
+  await requireProfile();
+  if (!password || password.length < 8) {
+    throw new Error("Password must be at least 8 characters");
+  }
   const supabase = await createClient();
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) throw new Error(error.message);
+}
+
+export async function updateTeammateRole(userId: string, role: UserRole) {
+  const me = await requireRole("admin");
+  if (!me.is_seed_admin && !me.can_configure_team) {
+    throw new Error("You don't have permission to change roles");
+  }
+  const supabase = await createClient();
+  // Don't allow demoting the seed admin.
+  const { data: target } = await supabase
+    .from("profiles")
+    .select("is_seed_admin")
+    .eq("id", userId)
+    .maybeSingle<{ is_seed_admin: boolean }>();
+  if (target?.is_seed_admin) {
+    throw new Error("Cannot change the seed admin's role");
+  }
   const { error } = await supabase.from("profiles").update({ role }).eq("id", userId);
+  if (error) throw new Error(error.message);
+  revalidatePath("/settings/team");
+}
+
+export async function updateMemberSidebar(userId: string, allowed: string[]) {
+  const me = await requireRole("admin");
+  if (!me.is_seed_admin && !me.can_configure_team) {
+    throw new Error("You don't have permission to change tab access");
+  }
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("profiles")
+    .update({ allowed_sidebar: allowed })
+    .eq("id", userId);
+  if (error) throw new Error(error.message);
+  revalidatePath("/settings/team");
+}
+
+export async function setAdminCanConfigureTeam(userId: string, value: boolean) {
+  const me = await requireProfile();
+  if (!me.is_seed_admin) {
+    throw new Error("Only the seed admin can change this setting");
+  }
+  if (userId === me.id) {
+    throw new Error("Seed admin always has permission to configure team");
+  }
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("profiles")
+    .update({ can_configure_team: value })
+    .eq("id", userId);
   if (error) throw new Error(error.message);
   revalidatePath("/settings/team");
 }

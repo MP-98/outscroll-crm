@@ -1,15 +1,18 @@
 import { z } from "zod";
 import { optionalStringSchema, tagsSchema } from "./common";
+import { normalizeIgHandle } from "@/lib/ig";
 
 export const brandSchema = z.object({
   name: z.string().trim().min(1, "Required"),
   industry: optionalStringSchema.nullable().default(null),
-  ig_handle: z
-    .string()
-    .transform((v) => v.trim().replace(/^@/, ""))
-    .nullable()
-    .optional()
-    .transform((v) => (v ? v : null)),
+  ig_handle: z.preprocess(
+    (v) => {
+      if (v == null) return null;
+      const normalized = normalizeIgHandle(String(v));
+      return normalized || null;
+    },
+    z.union([z.string(), z.null()]),
+  ),
   website: optionalStringSchema.nullable().default(null),
   tags: tagsSchema,
 });

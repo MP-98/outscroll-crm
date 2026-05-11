@@ -1,9 +1,11 @@
 import { notFound } from "next/navigation";
 import { ExternalLink } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { igUrl, normalizeIgHandle } from "@/lib/ig";
 import { requireProfile } from "@/lib/auth";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import { PocsTab } from "./pocs-tab";
 import { OutreachHistoryTab } from "./outreach-history-tab";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -35,17 +37,23 @@ export default async function BrandDetailPage({ params }: Props) {
 
   return (
     <>
+      <Breadcrumbs
+        items={[
+          { label: "Brands", href: "/brands" },
+          { label: brand.name },
+        ]}
+      />
       <div className="border-b border-border px-5 py-4 flex flex-col gap-2">
         <div className="flex items-center gap-3 flex-wrap">
           <h1 className="text-base font-semibold">{brand.name}</h1>
           {brand.ig_handle ? (
             <a
-              href={`https://instagram.com/${brand.ig_handle}`}
+              href={igUrl(brand.ig_handle)}
               target="_blank"
               rel="noopener"
               className="text-xs text-muted-foreground hover:text-primary inline-flex items-center gap-1"
             >
-              @{brand.ig_handle}
+              @{normalizeIgHandle(brand.ig_handle)}
               <ExternalLink className="h-3 w-3" />
             </a>
           ) : null}

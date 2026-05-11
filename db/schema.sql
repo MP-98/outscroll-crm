@@ -16,8 +16,16 @@ create table if not exists profiles (
   linked_talent_id uuid,
   linked_brand_id uuid,
   linked_managed_brand_id uuid,
+  -- Permissions (Phase 1 tab access; see db/permissions.sql)
+  is_seed_admin boolean default false,
+  can_configure_team boolean default true,
+  allowed_sidebar text[] default null,
   created_at timestamptz default now()
 );
+-- For existing projects, add columns idempotently:
+alter table profiles add column if not exists is_seed_admin boolean default false;
+alter table profiles add column if not exists can_configure_team boolean default true;
+alter table profiles add column if not exists allowed_sidebar text[] default null;
 create index if not exists profiles_role_idx on profiles(role);
 
 -- Auto-create a profile row when a user signs up via Supabase Auth.
@@ -381,3 +389,26 @@ end $$;
 insert into storage.buckets (id, name, public)
 values ('documents', 'documents', false)
 on conflict (id) do nothing;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Phase 1: disable RLS. Spec defers RLS to Phase 4 (when external portals ship).
+-- Without this, user sessions can't read their own rows because Supabase enables
+-- RLS by default on new tables and we ship no policies in v1.
+-- ─────────────────────────────────────────────────────────────────────────────
+alter table profiles                     disable row level security;
+alter table niches                       disable row level security;
+alter table talents                      disable row level security;
+alter table talent_contacts              disable row level security;
+alter table brands                       disable row level security;
+alter table brand_pocs                   disable row level security;
+alter table outreaches                   disable row level security;
+alter table outreach_activities          disable row level security;
+alter table managed_brands               disable row level security;
+alter table external_influencers         disable row level security;
+alter table campaigns                    disable row level security;
+alter table campaign_outreaches          disable row level security;
+alter table campaign_outreach_activities disable row level security;
+alter table payments                     disable row level security;
+alter table documents                    disable row level security;
+alter table reminders                    disable row level security;
+alter table ig_sync_runs                 disable row level security;

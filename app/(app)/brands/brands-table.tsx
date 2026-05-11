@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { fmtRelative } from "@/lib/date";
+import { igUrl, normalizeIgHandle } from "@/lib/ig";
 
 export interface BrandRow {
   id: string;
@@ -54,13 +55,13 @@ export function BrandsTable({ rows }: { rows: BrandRow[] }) {
       cell: ({ row }) =>
         row.original.ig_handle ? (
           <a
-            href={`https://instagram.com/${row.original.ig_handle}`}
+            href={igUrl(row.original.ig_handle)}
             target="_blank"
             rel="noopener"
             onClick={(e) => e.stopPropagation()}
             className="inline-flex items-center gap-1 text-muted-foreground hover:text-primary"
           >
-            @{row.original.ig_handle}
+            @{normalizeIgHandle(row.original.ig_handle)}
             <ExternalLink className="h-3 w-3" />
           </a>
         ) : (

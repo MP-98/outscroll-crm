@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { formatCompact } from "@/lib/currency";
 import { fmtRelative } from "@/lib/date";
+import { igUrl, normalizeIgHandle } from "@/lib/ig";
 
 export interface TalentRow {
   id: string;
@@ -74,13 +75,13 @@ export function TalentsTable({ rows, managers, niches }: Props) {
       header: "Instagram",
       cell: ({ row }) => (
         <a
-          href={`https://instagram.com/${row.original.ig_handle}`}
+          href={igUrl(row.original.ig_handle)}
           target="_blank"
           rel="noopener"
           onClick={(e) => e.stopPropagation()}
           className="inline-flex items-center gap-1 text-muted-foreground hover:text-primary"
         >
-          @{row.original.ig_handle}
+          @{normalizeIgHandle(row.original.ig_handle)}
           <ExternalLink className="h-3 w-3" />
         </a>
       ),

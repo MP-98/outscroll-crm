@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { requireProfile } from "@/lib/auth";
+import { requireProfile, requireRole } from "@/lib/auth";
 import { talentSchema, type TalentInput } from "@/lib/validations/talent";
 import { redirect } from "next/navigation";
 
@@ -88,4 +88,16 @@ export async function deleteContact(talentId: string, contactId: string) {
   const { error } = await supabase.from("talent_contacts").delete().eq("id", contactId);
   if (error) throw new Error(error.message);
   revalidatePath(`/talents/${talentId}`);
+}
+
+export async function reassignTalentManager(talentId: string, managerId: string | null) {
+  await requireRole("admin");
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("talents")
+    .update({ manager_id: managerId })
+    .eq("id", talentId);
+  if (error) throw new Error(error.message);
+  revalidatePath(`/talents/${talentId}`);
+  revalidatePath("/talents");
 }

@@ -51,6 +51,9 @@ export interface Profile {
   linked_talent_id: string | null;
   linked_brand_id: string | null;
   linked_managed_brand_id: string | null;
+  is_seed_admin: boolean;
+  can_configure_team: boolean;
+  allowed_sidebar: string[] | null;
   created_at: string;
 }
 

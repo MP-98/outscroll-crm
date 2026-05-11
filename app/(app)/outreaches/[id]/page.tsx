@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireProfile } from "@/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import { ChannelIcon, ChannelLabel } from "@/components/channel-icon";
 import { fmtDate, fmtRelative, fmtDateTime } from "@/lib/date";
 import { formatINR, commission } from "@/lib/currency";
@@ -55,6 +56,15 @@ export default async function OutreachDetailPage({ params }: Props) {
 
   return (
     <>
+      <Breadcrumbs
+        items={[
+          { label: "Outreaches", href: "/outreaches" },
+          {
+            label:
+              (o.talent?.full_name ?? "Talent") + " ↔ " + (o.brand?.name ?? "Brand"),
+          },
+        ]}
+      />
       <div className="border-b border-border px-5 py-4 flex flex-col gap-2">
         <div className="flex flex-wrap items-center gap-3">
           <Link

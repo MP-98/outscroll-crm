@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { LoginForm } from "./login-form";
 
 export const metadata = { title: "Sign in · Outscroll CRM" };
@@ -11,11 +12,13 @@ export default function LoginPage() {
             O
           </div>
           <h1 className="text-xl font-semibold tracking-tight">Outscroll CRM</h1>
-          <p className="text-sm text-muted-foreground">Sign in with your work email.</p>
+          <p className="text-sm text-muted-foreground">Sign in with your work email and password.</p>
         </div>
-        <LoginForm />
+        <Suspense fallback={<div className="h-40" />}>
+          <LoginForm />
+        </Suspense>
         <p className="text-[11px] text-muted-foreground text-center">
-          Access by invite only. Contact an admin if you don&apos;t have an account.
+          Access by invite only. Contact an admin if you don&apos;t have credentials yet.
         </p>
       </div>
     </div>

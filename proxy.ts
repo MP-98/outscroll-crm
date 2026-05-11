@@ -9,7 +9,10 @@ export async function proxy(request: NextRequest) {
     (p) => pathname === p || pathname.startsWith(`${p}/`),
   );
 
-  let supabaseResponse = NextResponse.next({ request });
+  // Expose the current pathname to RSC layouts (used by the RouteGuard).
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-pathname", pathname);
+  let supabaseResponse = NextResponse.next({ request: { headers: requestHeaders } });
 
   // If env vars are missing, don't break the dev server — let pages handle it.
   if (
@@ -31,7 +34,9 @@ export async function proxy(request: NextRequest) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value),
           );
-          supabaseResponse = NextResponse.next({ request });
+          supabaseResponse = NextResponse.next({
+            request: { headers: requestHeaders },
+          });
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options),
           );

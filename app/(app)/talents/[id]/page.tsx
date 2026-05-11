@@ -6,9 +6,11 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { StatusPill } from "@/components/status-pill";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import { initials } from "@/lib/utils";
 import { formatCompact, commission } from "@/lib/currency";
 import { fmtDate, fmtRelative } from "@/lib/date";
+import { igUrl, normalizeIgHandle } from "@/lib/ig";
 import { OverviewTab } from "./_tabs/overview";
 import { OutreachesTab } from "./_tabs/outreaches";
 import { RateCardTab } from "./_tabs/rate-card";
@@ -16,6 +18,7 @@ import { ContactsTab } from "./_tabs/contacts";
 import { DocumentsTab } from "./_tabs/documents";
 import { RevenueTab } from "./_tabs/revenue";
 import { SyncIgButton } from "./_tabs/sync-ig-button";
+import { ManagerSelect } from "./_tabs/manager-select";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -30,7 +33,7 @@ export async function generateMetadata({ params }: Props) {
 
 export default async function TalentDetailPage({ params }: Props) {
   const { id } = await params;
-  await requireProfile();
+  const me = await requireProfile();
   const supabase = await createClient();
 
   const [
@@ -68,6 +71,12 @@ export default async function TalentDetailPage({ params }: Props) {
 
   return (
     <>
+      <Breadcrumbs
+        items={[
+          { label: "Talents", href: "/talents" },
+          { label: talent.full_name },
+        ]}
+      />
       <div className="border-b border-border">
         <div className="flex items-start gap-4 px-5 py-4">
           <Avatar className="h-12 w-12">
@@ -77,12 +86,12 @@ export default async function TalentDetailPage({ params }: Props) {
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-base font-semibold truncate">{talent.full_name}</h1>
               <a
-                href={`https://instagram.com/${talent.ig_handle}`}
+                href={igUrl(talent.ig_handle)}
                 target="_blank"
                 rel="noopener"
                 className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
               >
-                @{talent.ig_handle}
+                @{normalizeIgHandle(talent.ig_handle)}
                 <ExternalLink className="h-3 w-3" />
               </a>
               <StatusPill status={talent.status} />
@@ -121,12 +130,18 @@ export default async function TalentDetailPage({ params }: Props) {
                   {(talent.languages ?? []).join(", ")}
                 </span>
               ) : null}
-              <span>
-                Manager:{" "}
-                <span className="text-foreground">
-                  {(talent as { manager?: { full_name?: string } }).manager?.full_name ?? "Unassigned"}
-                </span>
-              </span>
+              <ManagerSelect
+                talentId={talent.id}
+                currentManagerId={talent.manager_id}
+                currentManagerName={
+                  (talent as { manager?: { full_name?: string } }).manager?.full_name ?? null
+                }
+                managers={(profiles ?? []).map((p) => ({
+                  id: p.id,
+                  name: p.full_name ?? "—",
+                }))}
+                canReassign={me.role === "admin"}
+              />
               {talent.onboarded_at ? (
                 <span>Onboarded {fmtDate(talent.onboarded_at)}</span>
               ) : null}

@@ -12,21 +12,26 @@ import {
   Sparkles,
   Settings,
   LayoutDashboard,
+  type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { SidebarKey, SidebarItem } from "@/lib/permissions";
 
-const NAV = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/inbox", label: "Inbox", icon: Inbox },
-  { href: "/talents", label: "Talents", icon: Users },
-  { href: "/brands", label: "Brands", icon: Building2 },
-  { href: "/outreaches", label: "Outreaches", icon: MessagesSquare },
-  { href: "/managed-brands", label: "Managed brands", icon: Briefcase, comingSoon: true },
-  { href: "/campaigns", label: "Campaigns", icon: Megaphone, comingSoon: true },
-  { href: "/influencers", label: "Influencers", icon: Sparkles, comingSoon: true },
+const ICONS: Record<SidebarKey, LucideIcon> = {
+  dashboard: LayoutDashboard,
+  inbox: Inbox,
+  talents: Users,
+  brands: Building2,
+  outreaches: MessagesSquare,
+};
+
+const PHASE2_ITEMS: Array<{ href: string; label: string; icon: LucideIcon }> = [
+  { href: "/managed-brands", label: "Managed brands", icon: Briefcase },
+  { href: "/campaigns", label: "Campaigns", icon: Megaphone },
+  { href: "/influencers", label: "Influencers", icon: Sparkles },
 ];
 
-export function Sidebar() {
+export function Sidebar({ items }: { items: SidebarItem[] }) {
   const pathname = usePathname();
 
   return (
@@ -40,27 +45,12 @@ export function Sidebar() {
         </Link>
       </div>
       <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto">
-        {NAV.map((item) => {
+        {items.map((item) => {
           const active =
             item.href === "/"
               ? pathname === "/"
               : pathname === item.href || pathname.startsWith(`${item.href}/`);
-          const Icon = item.icon;
-          if (item.comingSoon) {
-            return (
-              <span
-                key={item.href}
-                className="flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground/70 cursor-not-allowed"
-                title="Phase 2"
-              >
-                <span className="flex items-center gap-2">
-                  <Icon className="h-4 w-4" />
-                  {item.label}
-                </span>
-                <span className="text-[10px] uppercase tracking-wider opacity-70">P2</span>
-              </span>
-            );
-          }
+          const Icon = ICONS[item.key];
           return (
             <Link
               key={item.href}
@@ -75,6 +65,23 @@ export function Sidebar() {
               <Icon className="h-4 w-4" />
               {item.label}
             </Link>
+          );
+        })}
+        <div className="my-2 h-px bg-border" />
+        {PHASE2_ITEMS.map((item) => {
+          const Icon = item.icon;
+          return (
+            <span
+              key={item.href}
+              className="flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground/70 cursor-not-allowed"
+              title="Phase 2"
+            >
+              <span className="flex items-center gap-2">
+                <Icon className="h-4 w-4" />
+                {item.label}
+              </span>
+              <span className="text-[10px] uppercase tracking-wider opacity-70">P2</span>
+            </span>
           );
         })}
       </nav>

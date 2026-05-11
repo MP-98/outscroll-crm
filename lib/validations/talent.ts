@@ -6,6 +6,7 @@ import {
   optionalStringSchema,
   tagsSchema,
 } from "./common";
+import { normalizeIgHandle } from "@/lib/ig";
 
 export const talentStatusEnum = z.enum(["active", "paused", "offboarded"]);
 export const exclusivityEnum = z.enum(["exclusive", "non_exclusive"]);
@@ -25,7 +26,8 @@ export const talentSchema = z.object({
     .string()
     .trim()
     .min(1, "Required")
-    .transform((v) => v.replace(/^@/, "")),
+    .transform((v) => normalizeIgHandle(v))
+    .refine((v) => v.length > 0, "Required"),
   ig_followers: optionalIntSchema.nullable().default(null),
   avg_reel_views: optionalIntSchema.nullable().default(null),
   niches: tagsSchema,

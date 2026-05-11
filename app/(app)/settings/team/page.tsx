@@ -10,14 +10,19 @@ export default async function TeamSettingsPage() {
   const supabase = await createClient();
   const { data } = await supabase.from("profiles").select("*").order("created_at");
   return (
-    <section className="max-w-2xl space-y-4">
+    <section className="max-w-3xl space-y-4">
       <header>
         <h2 className="text-base font-semibold">Team</h2>
         <p className="text-xs text-muted-foreground">
-          Invite teammates by email. They&apos;ll receive a magic link to finish setup.
+          Create teammate accounts with an initial password. Configure which tabs each member can access.
         </p>
       </header>
-      <TeamManager initial={(data ?? []) as Profile[]} currentUserId={me.id} />
+      <TeamManager
+        initial={(data ?? []) as Profile[]}
+        currentUserId={me.id}
+        meIsSeedAdmin={me.is_seed_admin}
+        meCanConfigure={me.is_seed_admin || me.can_configure_team}
+      />
     </section>
   );
 }
