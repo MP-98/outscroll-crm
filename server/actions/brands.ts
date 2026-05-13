@@ -20,6 +20,22 @@ export async function createBrand(input: BrandInput) {
   redirect(`/brands/${created.id}`);
 }
 
+/** Same as createBrand but returns the created row instead of redirecting.
+ *  Used by the inline brand picker inside the New Outreach form. */
+export async function createBrandReturning(input: BrandInput) {
+  await requireProfile();
+  const data = brandSchema.parse(input);
+  const supabase = await createClient();
+  const { data: created, error } = await supabase
+    .from("brands")
+    .insert(data)
+    .select("id, name, industry")
+    .single();
+  if (error) throw new Error(error.message);
+  revalidatePath("/brands");
+  return created as { id: string; name: string; industry: string | null };
+}
+
 export async function updateBrand(id: string, input: BrandInput) {
   await requireProfile();
   const data = brandSchema.parse(input);

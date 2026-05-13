@@ -159,6 +159,15 @@ create index if not exists outreaches_talent_id_idx on outreaches(talent_id);
 create index if not exists outreaches_brand_id_idx on outreaches(brand_id);
 create index if not exists outreaches_owner_id_idx on outreaches(owner_id);
 
+-- Extended fields (see db/outreach-fields.sql for the standalone migration).
+alter table outreaches add column if not exists reached_out_at date;
+alter table outreaches add column if not exists negotiated_amount integer;
+alter table outreaches add column if not exists direction text;
+alter table outreaches drop constraint if exists outreaches_direction_check;
+alter table outreaches
+  add constraint outreaches_direction_check
+  check (direction in ('inbound','outbound') or direction is null);
+
 create table if not exists outreach_activities (
   id uuid primary key default gen_random_uuid(),
   outreach_id uuid not null references outreaches(id) on delete cascade,

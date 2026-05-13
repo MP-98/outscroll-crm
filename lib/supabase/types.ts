@@ -120,17 +120,22 @@ export interface BrandPoc {
   notes: string | null;
 }
 
+export type OutreachDirection = "inbound" | "outbound";
+
 export interface Outreach {
   id: string;
   talent_id: string;
   brand_id: string;
   primary_poc_id: string | null;
   channel: Channel;
+  direction: OutreachDirection | null;
   status: OutreachStatus;
   deliverables: string | null;
   proposed_amount: number | null;
+  negotiated_amount: number | null;
   agreed_amount: number | null;
   commission_pct: number | null;
+  reached_out_at: string | null;
   next_followup_at: string;
   owner_id: string | null;
   notes: string | null;

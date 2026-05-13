@@ -148,9 +148,15 @@ export default async function OutreachDetailPage({ params }: Props) {
             <CardContent className="space-y-2 text-sm">
               <Detail label="Deliverables" value={o.deliverables ?? "—"} multiline />
               <Detail label="Proposed" value={formatINR(o.proposed_amount)} />
+              <Detail label="Negotiated" value={formatINR(o.negotiated_amount)} />
               <Detail label="Agreed" value={formatINR(o.agreed_amount)} />
               <Detail label="Commission %" value={commissionPct ? `${commissionPct}%` : "—"} />
               <Detail label="Commission ₹" value={formatINR(commissionAmt)} />
+              <Detail label="Direction" value={o.direction ? o.direction.charAt(0).toUpperCase() + o.direction.slice(1) : "—"} />
+              <Detail
+                label="Reached out"
+                value={o.reached_out_at ? fmtDate(o.reached_out_at) : "—"}
+              />
               <Detail
                 label="Next follow-up"
                 value={fmtDate(o.next_followup_at)}

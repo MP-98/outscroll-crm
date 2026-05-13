@@ -9,6 +9,7 @@ import {
 } from "./common";
 
 export const channelEnum = z.enum(["ig_dm", "linkedin", "whatsapp", "email", "call", "other"]);
+export const directionEnum = z.enum(["inbound", "outbound"]);
 export const outreachStatusEnum = z.enum([
   "prospected",
   "contacted",
@@ -27,11 +28,14 @@ export const outreachSchema = z.object({
   brand_id: z.string().uuid({ message: "Required" }),
   primary_poc_id: z.string().uuid().nullable().optional(),
   channel: channelEnum,
+  direction: directionEnum.default("outbound"),
   status: outreachStatusEnum.default("prospected"),
   deliverables: optionalStringSchema.nullable().default(null),
   proposed_amount: optionalIntSchema.nullable().default(null),
+  negotiated_amount: optionalIntSchema.nullable().default(null),
   agreed_amount: optionalIntSchema.nullable().default(null),
   commission_pct: optionalDecimalSchema.nullable().default(null),
+  reached_out_at: optionalDateSchema.nullable().default(null),
   next_followup_at: requiredDateSchema,
   owner_id: z.string().uuid().nullable().optional(),
   notes: optionalStringSchema.nullable().default(null),
