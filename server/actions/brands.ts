@@ -70,3 +70,28 @@ export async function deletePoc(brandId: string, pocId: string) {
   if (error) throw new Error(error.message);
   revalidatePath(`/brands/${brandId}`);
 }
+
+/** Creates a POC and returns the new row — for inline POC creation inside the
+ *  outreach form/detail without a full page navigation. */
+export async function createPocReturning(brandId: string, poc: BrandPocInput) {
+  await requireProfile();
+  const data = brandPocSchema.parse(poc);
+  const supabase = await createClient();
+  const { data: created, error } = await supabase
+    .from("brand_pocs")
+    .insert({ ...data, brand_id: brandId })
+    .select("id, brand_id, full_name, role_title, email, phone, ig_handle, linkedin_url")
+    .single();
+  if (error) throw new Error(error.message);
+  revalidatePath(`/brands/${brandId}`);
+  return created as {
+    id: string;
+    brand_id: string;
+    full_name: string;
+    role_title: string | null;
+    email: string | null;
+    phone: string | null;
+    ig_handle: string | null;
+    linkedin_url: string | null;
+  };
+}

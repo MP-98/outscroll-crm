@@ -1,11 +1,6 @@
 import type { Profile } from "@/lib/supabase/types";
 
-export type SidebarKey =
-  | "dashboard"
-  | "inbox"
-  | "talents"
-  | "brands"
-  | "outreaches";
+export type SidebarKey = "dashboard" | "inbox" | "talents" | "outreaches";
 
 export interface SidebarItem {
   key: SidebarKey;
@@ -17,7 +12,6 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
   { key: "dashboard", href: "/", label: "Dashboard" },
   { key: "inbox", href: "/inbox", label: "Inbox" },
   { key: "talents", href: "/talents", label: "Talents" },
-  { key: "brands", href: "/brands", label: "Brands" },
   { key: "outreaches", href: "/outreaches", label: "Outreaches" },
 ];
 
@@ -51,9 +45,10 @@ const PATH_TO_KEY: Array<{ test: (p: string) => boolean; key: SidebarKey }> = [
   { test: (p) => p === "/", key: "dashboard" },
   { test: (p) => p === "/inbox" || p.startsWith("/inbox/"), key: "inbox" },
   { test: (p) => p === "/talents" || p.startsWith("/talents/"), key: "talents" },
-  { test: (p) => p === "/brands" || p.startsWith("/brands/"), key: "brands" },
   { test: (p) => p === "/outreaches" || p.startsWith("/outreaches/"), key: "outreaches" },
 ];
+// Note: /brands/[id] is intentionally non-gated — it's a deep-link target
+// reachable only from within the Outreaches experience, not a sidebar tab.
 
 /** Look up the sidebar key for a pathname, or null if it isn't a gated path. */
 export function sidebarKeyFor(pathname: string): SidebarKey | null {

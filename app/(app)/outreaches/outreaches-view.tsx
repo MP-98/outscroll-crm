@@ -42,9 +42,11 @@ export interface OutreachRow {
 export function OutreachesView({
   rows,
   owners,
+  brands,
 }: {
   rows: OutreachRow[];
   owners: Array<{ id: string; name: string }>;
+  brands: Array<{ id: string; name: string }>;
 }) {
   const router = useRouter();
   const [view, setView] = useState<"table" | "kanban">("table");
@@ -52,6 +54,7 @@ export function OutreachesView({
   const [status, setStatus] = useState<string>("all");
   const [channel, setChannel] = useState<string>("all");
   const [owner, setOwner] = useState<string>("all");
+  const [brand, setBrand] = useState<string>("all");
 
   const filtered = rows.filter((r) => {
     const q = search.trim().toLowerCase();
@@ -64,6 +67,7 @@ export function OutreachesView({
     if (status !== "all" && r.status !== status) return false;
     if (channel !== "all" && r.channel !== channel) return false;
     if (owner !== "all" && r.owner_id !== owner) return false;
+    if (brand !== "all" && r.brand_id !== brand) return false;
     return true;
   });
 
@@ -196,6 +200,19 @@ export function OutreachesView({
             {owners.map((o) => (
               <SelectItem key={o.id} value={o.id}>
                 {o.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={brand} onValueChange={setBrand}>
+          <SelectTrigger className="w-40">
+            <SelectValue placeholder="Brand" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Any brand</SelectItem>
+            {brands.map((b) => (
+              <SelectItem key={b.id} value={b.id}>
+                {b.name}
               </SelectItem>
             ))}
           </SelectContent>

@@ -5,7 +5,6 @@ import { Command } from "cmdk";
 import {
   Inbox,
   Users,
-  Building2,
   MessagesSquare,
   Plus,
   Settings,
@@ -22,14 +21,12 @@ const NAV_ITEMS = [
   { label: "Dashboard", href: "/", icon: LayoutDashboard },
   { label: "Inbox", href: "/inbox", icon: Inbox },
   { label: "Talents", href: "/talents", icon: Users },
-  { label: "Brands", href: "/brands", icon: Building2 },
   { label: "Outreaches", href: "/outreaches", icon: MessagesSquare },
   { label: "Settings", href: "/settings", icon: Settings },
 ];
 
 const CREATE_ITEMS = [
   { label: "New talent", href: "/talents/new" },
-  { label: "New brand", href: "/brands/new" },
   { label: "New outreach", href: "/outreaches/new" },
 ];
 

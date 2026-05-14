@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import {
   Inbox,
   Users,
-  Building2,
   MessagesSquare,
   Briefcase,
   Megaphone,
@@ -21,7 +20,6 @@ const ICONS: Record<SidebarKey, LucideIcon> = {
   dashboard: LayoutDashboard,
   inbox: Inbox,
   talents: Users,
-  brands: Building2,
   outreaches: MessagesSquare,
 };
 

@@ -11,18 +11,20 @@ export const metadata = { title: "Outreaches" };
 export default async function OutreachesPage() {
   await requireProfile();
   const supabase = await createClient();
-  const [{ data: outreaches }, { data: profiles }] = await Promise.all([
-    supabase
-      .from("outreaches")
-      .select(
-        `*,
-         talent:talents(id, full_name, ig_handle),
-         brand:brands(id, name),
-         owner:profiles!outreaches_owner_id_fkey(id, full_name)`,
-      )
-      .order("updated_at", { ascending: false }),
-    supabase.from("profiles").select("id, full_name").order("full_name"),
-  ]);
+  const [{ data: outreaches }, { data: profiles }, { data: brands }] =
+    await Promise.all([
+      supabase
+        .from("outreaches")
+        .select(
+          `*,
+           talent:talents(id, full_name, ig_handle),
+           brand:brands(id, name),
+           owner:profiles!outreaches_owner_id_fkey(id, full_name)`,
+        )
+        .order("updated_at", { ascending: false }),
+      supabase.from("profiles").select("id, full_name").order("full_name"),
+      supabase.from("brands").select("id, name").order("name"),
+    ]);
 
   const rows: OutreachRow[] = (outreaches ?? []).map((o) => ({
     id: o.id,
@@ -57,6 +59,7 @@ export default async function OutreachesPage() {
       <OutreachesView
         rows={rows}
         owners={(profiles ?? []).map((p) => ({ id: p.id, name: p.full_name ?? "—" }))}
+        brands={(brands ?? []).map((b) => ({ id: b.id, name: b.name }))}
       />
     </>
   );

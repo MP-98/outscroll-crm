@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/select";
 import { TagInput } from "@/components/tag-input";
 import { BrandPicker, type BrandOption } from "@/components/forms/brand-picker";
+import { PocPicker, type PocOption } from "@/components/forms/poc-picker";
 import { outreachSchema, type OutreachInput } from "@/lib/validations/outreach";
 import { createOutreach } from "@/server/actions/outreaches";
 import { todayISO } from "@/lib/date";
@@ -29,15 +30,6 @@ type OutreachFormValues = z.input<typeof outreachSchema>;
 interface Option {
   id: string;
   label: string;
-}
-
-interface PocOption {
-  id: string;
-  brand_id: string;
-  full_name: string;
-  role_title: string | null;
-  email: string | null;
-  phone: string | null;
 }
 
 interface OutreachFormProps {
@@ -63,6 +55,7 @@ export function OutreachForm({
 }: OutreachFormProps) {
   const [pending, start] = useTransition();
   const [brandList, setBrandList] = useState<BrandOption[]>(brands);
+  const [pocList, setPocList] = useState<PocOption[]>(pocs);
 
   const form = useForm<OutreachFormValues>({
     resolver: zodResolver(outreachSchema) as never,
@@ -94,8 +87,8 @@ export function OutreachForm({
     [brandList, brandId],
   );
   const brandPocs = useMemo(
-    () => pocs.filter((p) => p.brand_id === brandId),
-    [pocs, brandId],
+    () => pocList.filter((p) => p.brand_id === brandId),
+    [pocList, brandId],
   );
 
   // Default follow-up to today and reset POC when brand changes.
@@ -187,53 +180,30 @@ export function OutreachForm({
 
           <div className="space-y-1.5 sm:col-span-2">
             <Label>POC at brand</Label>
-            <Select
-              value={form.watch("primary_poc_id") ?? "none"}
-              onValueChange={(v) =>
-                form.setValue("primary_poc_id", v === "none" ? null : v)
+            <PocPicker
+              brandId={brandId || null}
+              pocs={pocList}
+              value={form.watch("primary_poc_id") ?? null}
+              onChange={(id) => form.setValue("primary_poc_id", id)}
+              onCreated={(poc) =>
+                setPocList((prev) =>
+                  prev.some((p) => p.id === poc.id) ? prev : [...prev, poc],
+                )
               }
-              disabled={!brandId}
-            >
-              <SelectTrigger>
-                <SelectValue
-                  placeholder={
-                    brandId
-                      ? brandPocs.length === 0
-                        ? "No POCs added for this brand yet"
-                        : "Pick a POC"
-                      : "Pick a brand first"
-                  }
-                />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">— None —</SelectItem>
-                {brandPocs.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.full_name}
-                    {p.role_title ? ` · ${p.role_title}` : ""}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {brandId && brandPocs.length === 0 ? (
-              <p className="text-[11px] text-muted-foreground">
-                Add POCs from the brand page. You can save this outreach without one.
-              </p>
-            ) : form.watch("primary_poc_id") ? (
-              (() => {
-                const poc = brandPocs.find(
-                  (p) => p.id === form.watch("primary_poc_id"),
-                );
-                if (!poc) return null;
-                return (
-                  <p className="text-[11px] text-muted-foreground">
-                    {poc.email ? `${poc.email}` : ""}
-                    {poc.email && poc.phone ? " · " : ""}
-                    {poc.phone ? `${poc.phone}` : ""}
-                  </p>
-                );
-              })()
-            ) : null}
+            />
+            {(() => {
+              const pocId = form.watch("primary_poc_id");
+              if (!pocId) return null;
+              const poc = pocList.find((p) => p.id === pocId);
+              if (!poc || (!poc.email && !poc.phone)) return null;
+              return (
+                <p className="text-[11px] text-muted-foreground">
+                  {poc.email ?? ""}
+                  {poc.email && poc.phone ? " · " : ""}
+                  {poc.phone ?? ""}
+                </p>
+              );
+            })()}
           </div>
         </div>
       </Section>

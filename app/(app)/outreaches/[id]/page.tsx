@@ -1,17 +1,19 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ExternalLink } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { requireProfile } from "@/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Breadcrumbs } from "@/components/breadcrumbs";
-import { ChannelIcon, ChannelLabel } from "@/components/channel-icon";
-import { fmtDate, fmtRelative, fmtDateTime } from "@/lib/date";
-import { formatINR, commission } from "@/lib/currency";
+import { ChannelIcon } from "@/components/channel-icon";
+import { fmtRelative, fmtDateTime } from "@/lib/date";
 import { StatusSelect } from "./status-select";
+import { ChannelSelect, OwnerSelect } from "./header-controls";
 import { ActivityComposer } from "./activity-composer";
-import type { Outreach, Talent, Brand, BrandPoc, Profile } from "@/lib/supabase/types";
+import { BrandPanel } from "./brand-panel";
+import { DealTermsCard } from "./deal-terms-card";
+import { NotesCard } from "./notes-card";
+import type { Outreach, Talent, Brand, Profile } from "@/lib/supabase/types";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -22,37 +24,53 @@ export default async function OutreachDetailPage({ params }: Props) {
   await requireProfile();
   const supabase = await createClient();
 
-  const [{ data: outreach }, { data: activities }] = await Promise.all([
-    supabase
-      .from("outreaches")
-      .select(
-        `*,
-         talent:talents(id, full_name, ig_handle, default_commission_pct),
-         brand:brands(id, name, ig_handle),
-         poc:brand_pocs!outreaches_primary_poc_id_fkey(id, full_name, role_title, email, phone),
-         owner:profiles!outreaches_owner_id_fkey(id, full_name)`,
-      )
-      .eq("id", id)
-      .single(),
-    supabase
-      .from("outreach_activities")
-      .select(`*, author:profiles!outreach_activities_author_id_fkey(id, full_name)`)
-      .eq("outreach_id", id)
-      .order("occurred_at", { ascending: false }),
-  ]);
+  const [{ data: outreach }, { data: activities }, { data: profiles }] =
+    await Promise.all([
+      supabase
+        .from("outreaches")
+        .select(
+          `*,
+           talent:talents(id, full_name, ig_handle, default_commission_pct),
+           brand:brands(id, name, ig_handle, industry, website),
+           owner:profiles!outreaches_owner_id_fkey(id, full_name)`,
+        )
+        .eq("id", id)
+        .single(),
+      supabase
+        .from("outreach_activities")
+        .select(`*, author:profiles!outreach_activities_author_id_fkey(id, full_name)`)
+        .eq("outreach_id", id)
+        .order("occurred_at", { ascending: false }),
+      supabase.from("profiles").select("id, full_name").order("full_name"),
+    ]);
 
   if (!outreach) notFound();
 
   type Joined = Outreach & {
     talent: Pick<Talent, "id" | "full_name" | "ig_handle" | "default_commission_pct"> | null;
-    brand: Pick<Brand, "id" | "name" | "ig_handle"> | null;
-    poc: Pick<BrandPoc, "id" | "full_name" | "role_title" | "email" | "phone"> | null;
+    brand: Pick<Brand, "id" | "name" | "ig_handle" | "industry" | "website"> | null;
     owner: Pick<Profile, "id" | "full_name"> | null;
   };
   const o = outreach as Joined;
 
-  const commissionPct = o.commission_pct ?? o.talent?.default_commission_pct ?? 20;
-  const commissionAmt = commission(o.agreed_amount ?? null, commissionPct ?? 20);
+  // Brand hub data: all POCs for this brand + other outreaches with the brand.
+  const [{ data: brandPocs }, { data: brandOutreaches }] = await Promise.all([
+    supabase
+      .from("brand_pocs")
+      .select("id, brand_id, full_name, role_title, email, phone, ig_handle, linkedin_url")
+      .eq("brand_id", o.brand_id),
+    supabase
+      .from("outreaches")
+      .select("id, status, updated_at, talent:talents(id, full_name)")
+      .eq("brand_id", o.brand_id)
+      .neq("id", o.id)
+      .order("updated_at", { ascending: false }),
+  ]);
+
+  const members = (profiles ?? []).map((p) => ({
+    id: p.id,
+    name: p.full_name ?? "—",
+  }));
 
   return (
     <>
@@ -81,13 +99,10 @@ export default async function OutreachDetailPage({ params }: Props) {
             {o.brand?.name ?? "Brand"}
           </Link>
           <StatusSelect id={o.id} status={o.status} />
-          <span className="ml-auto text-xs text-muted-foreground inline-flex items-center gap-1.5">
-            <ChannelIcon channel={o.channel} />
-            {ChannelLabel(o.channel)}
-          </span>
-          <span className="text-xs text-muted-foreground">
-            Owner: {o.owner?.full_name ?? "—"}
-          </span>
+          <div className="ml-auto flex items-center gap-1">
+            <ChannelSelect outreachId={o.id} channel={o.channel} />
+            <OwnerSelect outreachId={o.id} ownerId={o.owner_id} members={members} />
+          </div>
         </div>
         <div className="flex flex-wrap gap-1">
           {(o.tags ?? []).map((t) => (
@@ -113,7 +128,8 @@ export default async function OutreachDetailPage({ params }: Props) {
               ) : (
                 <ol className="space-y-3 border-l border-border pl-5 ml-1">
                   {(activities ?? []).map((a) => {
-                    const auth = (a as { author?: { full_name?: string } }).author?.full_name ?? "—";
+                    const auth =
+                      (a as { author?: { full_name?: string } }).author?.full_name ?? "—";
                     return (
                       <li key={a.id} className="relative">
                         <span className="absolute -left-[27px] top-1.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-background border border-border">
@@ -141,108 +157,61 @@ export default async function OutreachDetailPage({ params }: Props) {
         </div>
 
         <aside className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm">Deal terms</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm">
-              <Detail label="Deliverables" value={o.deliverables ?? "—"} multiline />
-              <Detail label="Proposed" value={formatINR(o.proposed_amount)} />
-              <Detail label="Negotiated" value={formatINR(o.negotiated_amount)} />
-              <Detail label="Agreed" value={formatINR(o.agreed_amount)} />
-              <Detail label="Commission %" value={commissionPct ? `${commissionPct}%` : "—"} />
-              <Detail label="Commission ₹" value={formatINR(commissionAmt)} />
-              <Detail label="Direction" value={o.direction ? o.direction.charAt(0).toUpperCase() + o.direction.slice(1) : "—"} />
-              <Detail
-                label="Reached out"
-                value={o.reached_out_at ? fmtDate(o.reached_out_at) : "—"}
-              />
-              <Detail
-                label="Next follow-up"
-                value={fmtDate(o.next_followup_at)}
-              />
-              {o.paid_at ? <Detail label="Paid" value={fmtDate(o.paid_at)} /> : null}
-              {o.lost_reason ? <Detail label="Lost reason" value={o.lost_reason} /> : null}
-            </CardContent>
-          </Card>
+          <DealTermsCard
+            outreachId={o.id}
+            defaultCommissionPct={o.talent?.default_commission_pct ?? null}
+            terms={{
+              deliverables: o.deliverables,
+              proposed_amount: o.proposed_amount,
+              negotiated_amount: o.negotiated_amount,
+              agreed_amount: o.agreed_amount,
+              commission_pct: o.commission_pct,
+              direction: o.direction,
+              reached_out_at: o.reached_out_at,
+              next_followup_at: o.next_followup_at,
+              paid_at: o.paid_at,
+              lost_reason: o.lost_reason,
+            }}
+          />
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm">POC at brand</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm">
-              {o.poc ? (
-                <div className="space-y-1">
-                  <div className="font-medium">{o.poc.full_name}</div>
-                  {o.poc.role_title ? (
-                    <div className="text-xs text-muted-foreground">{o.poc.role_title}</div>
-                  ) : null}
-                  {o.poc.email ? (
-                    <a href={`mailto:${o.poc.email}`} className="text-xs hover:text-primary block">
-                      {o.poc.email}
-                    </a>
-                  ) : null}
-                  {o.poc.phone ? (
-                    <div className="text-xs">{o.poc.phone}</div>
-                  ) : null}
-                </div>
-              ) : (
-                <p className="text-xs text-muted-foreground">No POC linked.</p>
-              )}
-            </CardContent>
-          </Card>
+          <BrandPanel
+            outreachId={o.id}
+            brand={o.brand}
+            pocs={(brandPocs ?? []) as unknown as Parameters<typeof BrandPanel>[0]["pocs"]}
+            primaryPocId={o.primary_poc_id}
+            otherOutreaches={
+              (brandOutreaches ?? []).map((bo) => {
+                const t = bo as { talent?: unknown };
+                const talent = Array.isArray(t.talent) ? t.talent[0] : t.talent;
+                return { ...bo, talent: talent ?? null };
+              }) as Parameters<typeof BrandPanel>[0]["otherOutreaches"]
+            }
+          />
 
-          {o.notes ? (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">Notes</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm whitespace-pre-wrap">{o.notes}</p>
-              </CardContent>
-            </Card>
-          ) : null}
+          <NotesCard outreachId={o.id} notes={o.notes} />
 
           <Card>
             <CardHeader>
               <CardTitle className="text-sm">Meta</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 text-sm">
-              <Detail label="Created" value={fmtRelative(o.created_at)} />
-              <Detail label="Updated" value={fmtRelative(o.updated_at)} />
-              {o.brand?.ig_handle ? (
-                <a
-                  href={`https://instagram.com/${o.brand.ig_handle}`}
-                  target="_blank"
-                  rel="noopener"
-                  className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
-                >
-                  Brand IG
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-              ) : null}
+              <div className="flex justify-between gap-3">
+                <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                  Created
+                </span>
+                <span className="text-sm text-right">{fmtRelative(o.created_at)}</span>
+              </div>
+              <div className="flex justify-between gap-3">
+                <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                  Updated
+                </span>
+                <span className="text-sm text-right">{fmtRelative(o.updated_at)}</span>
+              </div>
             </CardContent>
           </Card>
         </aside>
       </div>
     </>
-  );
-}
-
-function Detail({
-  label,
-  value,
-  multiline,
-}: {
-  label: string;
-  value: string;
-  multiline?: boolean;
-}) {
-  return (
-    <div className={multiline ? "space-y-0.5" : "flex justify-between gap-3"}>
-      <span className="text-xs uppercase tracking-wide text-muted-foreground">{label}</span>
-      <span className={multiline ? "text-sm" : "text-sm text-right"}>{value}</span>
-    </div>
   );
 }
 

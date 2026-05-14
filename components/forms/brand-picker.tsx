@@ -33,6 +33,8 @@ export function BrandPicker({ brands, value, onChange }: BrandPickerProps) {
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState("");
   const [newIndustry, setNewIndustry] = useState("");
+  const [newIgHandle, setNewIgHandle] = useState("");
+  const [newWebsite, setNewWebsite] = useState("");
   const [pending, start] = useTransition();
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -60,6 +62,8 @@ export function BrandPicker({ brands, value, onChange }: BrandPickerProps) {
   function startCreate() {
     setNewName(query.trim());
     setNewIndustry("");
+    setNewIgHandle("");
+    setNewWebsite("");
     setCreating(true);
   }
 
@@ -71,8 +75,8 @@ export function BrandPicker({ brands, value, onChange }: BrandPickerProps) {
         const created = await createBrandReturning({
           name: newName.trim(),
           industry: newIndustry.trim() || null,
-          ig_handle: null,
-          website: null,
+          ig_handle: newIgHandle.trim() || null,
+          website: newWebsite.trim() || null,
           tags: [],
         });
         const opt: BrandOption = {
@@ -159,6 +163,30 @@ export function BrandPicker({ brands, value, onChange }: BrandPickerProps) {
                 value={newIndustry}
                 onChange={(e) => setNewIndustry(e.target.value)}
               />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <Label htmlFor="new-brand-ig" className="text-[10px]">
+                  IG handle (optional)
+                </Label>
+                <Input
+                  id="new-brand-ig"
+                  placeholder="brandhandle"
+                  value={newIgHandle}
+                  onChange={(e) => setNewIgHandle(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="new-brand-website" className="text-[10px]">
+                  Website (optional)
+                </Label>
+                <Input
+                  id="new-brand-website"
+                  placeholder="https://…"
+                  value={newWebsite}
+                  onChange={(e) => setNewWebsite(e.target.value)}
+                />
+              </div>
             </div>
             <div className="flex justify-end gap-2 pt-1">
               <Button type="button" size="sm" variant="ghost" onClick={() => setCreating(false)}>
