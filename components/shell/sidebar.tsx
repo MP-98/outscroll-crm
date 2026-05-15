@@ -21,13 +21,13 @@ const ICONS: Record<SidebarKey, LucideIcon> = {
   inbox: Inbox,
   talents: Users,
   outreaches: MessagesSquare,
+  managed_brands: Briefcase,
+  campaigns: Megaphone,
+  influencers: Sparkles,
 };
 
-const PHASE2_ITEMS: Array<{ href: string; label: string; icon: LucideIcon }> = [
-  { href: "/managed-brands", label: "Managed brands", icon: Briefcase },
-  { href: "/campaigns", label: "Campaigns", icon: Megaphone },
-  { href: "/influencers", label: "Influencers", icon: Sparkles },
-];
+const TALENT_SIDE: SidebarKey[] = ["dashboard", "inbox", "talents", "outreaches"];
+const BRAND_SIDE: SidebarKey[] = ["managed_brands", "campaigns", "influencers"];
 
 export function Sidebar({ items }: { items: SidebarItem[] }) {
   const pathname = usePathname();
@@ -43,45 +43,16 @@ export function Sidebar({ items }: { items: SidebarItem[] }) {
         </Link>
       </div>
       <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto">
-        {items.map((item) => {
-          const active =
-            item.href === "/"
-              ? pathname === "/"
-              : pathname === item.href || pathname.startsWith(`${item.href}/`);
-          const Icon = ICONS[item.key];
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors",
-                active
-                  ? "bg-accent text-foreground font-medium"
-                  : "text-muted-foreground hover:bg-accent hover:text-foreground",
-              )}
-            >
-              <Icon className="h-4 w-4" />
-              {item.label}
-            </Link>
-          );
-        })}
-        <div className="my-2 h-px bg-border" />
-        {PHASE2_ITEMS.map((item) => {
-          const Icon = item.icon;
-          return (
-            <span
-              key={item.href}
-              className="flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground/70 cursor-not-allowed"
-              title="Phase 2"
-            >
-              <span className="flex items-center gap-2">
-                <Icon className="h-4 w-4" />
-                {item.label}
-              </span>
-              <span className="text-[10px] uppercase tracking-wider opacity-70">P2</span>
-            </span>
-          );
-        })}
+        {renderGroup(items.filter((i) => TALENT_SIDE.includes(i.key)), pathname)}
+        {items.some((i) => BRAND_SIDE.includes(i.key)) ? (
+          <>
+            <div className="my-2 h-px bg-border" />
+            <div className="px-2 pb-1 text-[10px] uppercase tracking-wider text-muted-foreground/70">
+              Brand-managed
+            </div>
+            {renderGroup(items.filter((i) => BRAND_SIDE.includes(i.key)), pathname)}
+          </>
+        ) : null}
       </nav>
       <div className="px-2 py-3 border-t border-border">
         <Link
@@ -99,4 +70,29 @@ export function Sidebar({ items }: { items: SidebarItem[] }) {
       </div>
     </aside>
   );
+}
+
+function renderGroup(items: SidebarItem[], pathname: string) {
+  return items.map((item) => {
+    const active =
+      item.href === "/"
+        ? pathname === "/"
+        : pathname === item.href || pathname.startsWith(`${item.href}/`);
+    const Icon = ICONS[item.key];
+    return (
+      <Link
+        key={item.href}
+        href={item.href}
+        className={cn(
+          "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors",
+          active
+            ? "bg-accent text-foreground font-medium"
+            : "text-muted-foreground hover:bg-accent hover:text-foreground",
+        )}
+      >
+        <Icon className="h-4 w-4" />
+        {item.label}
+      </Link>
+    );
+  });
 }

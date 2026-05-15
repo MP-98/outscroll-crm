@@ -1,6 +1,13 @@
 import type { Profile } from "@/lib/supabase/types";
 
-export type SidebarKey = "dashboard" | "inbox" | "talents" | "outreaches";
+export type SidebarKey =
+  | "dashboard"
+  | "inbox"
+  | "talents"
+  | "outreaches"
+  | "managed_brands"
+  | "campaigns"
+  | "influencers";
 
 export interface SidebarItem {
   key: SidebarKey;
@@ -13,6 +20,9 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
   { key: "inbox", href: "/inbox", label: "Inbox" },
   { key: "talents", href: "/talents", label: "Talents" },
   { key: "outreaches", href: "/outreaches", label: "Outreaches" },
+  { key: "managed_brands", href: "/managed-brands", label: "Managed brands" },
+  { key: "campaigns", href: "/campaigns", label: "Campaigns" },
+  { key: "influencers", href: "/influencers", label: "Influencers" },
 ];
 
 export const DEFAULT_MEMBER_SIDEBAR: SidebarKey[] = [
@@ -46,6 +56,12 @@ const PATH_TO_KEY: Array<{ test: (p: string) => boolean; key: SidebarKey }> = [
   { test: (p) => p === "/inbox" || p.startsWith("/inbox/"), key: "inbox" },
   { test: (p) => p === "/talents" || p.startsWith("/talents/"), key: "talents" },
   { test: (p) => p === "/outreaches" || p.startsWith("/outreaches/"), key: "outreaches" },
+  {
+    test: (p) => p === "/managed-brands" || p.startsWith("/managed-brands/"),
+    key: "managed_brands",
+  },
+  { test: (p) => p === "/campaigns" || p.startsWith("/campaigns/"), key: "campaigns" },
+  { test: (p) => p === "/influencers" || p.startsWith("/influencers/"), key: "influencers" },
 ];
 // Note: /brands/[id] is intentionally non-gated — it's a deep-link target
 // reachable only from within the Outreaches experience, not a sidebar tab.

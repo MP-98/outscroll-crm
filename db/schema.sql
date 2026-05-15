@@ -285,6 +285,29 @@ create index if not exists campaign_outreaches_status_idx on campaign_outreaches
 create index if not exists campaign_outreaches_next_followup_at_idx on campaign_outreaches(next_followup_at);
 create index if not exists campaign_outreaches_owner_id_idx on campaign_outreaches(owner_id);
 
+-- Phase 2: deliverable_done flag (see db/phase2-fields.sql).
+alter table campaign_outreaches
+  add column if not exists deliverable_done boolean default false;
+
+-- Auto-log status_change activity on campaign_outreaches update.
+create or replace function public.log_campaign_outreach_status_change()
+returns trigger
+language plpgsql
+as $$
+begin
+  if new.status is distinct from old.status then
+    insert into campaign_outreach_activities (campaign_outreach_id, channel, direction, summary, author_id)
+    values (new.id, 'status_change', 'internal', old.status || ' → ' || new.status, new.owner_id);
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists campaign_outreaches_status_change_trg on campaign_outreaches;
+create trigger campaign_outreaches_status_change_trg
+  after update of status on campaign_outreaches
+  for each row execute function public.log_campaign_outreach_status_change();
+
 create table if not exists campaign_outreach_activities (
   id uuid primary key default gen_random_uuid(),
   campaign_outreach_id uuid not null references campaign_outreaches(id) on delete cascade,

@@ -34,24 +34,32 @@ async function checkRateLimit(userId: string) {
   }
 }
 
-export async function syncTalentFromInstagram(talentId: string) {
+type SyncTargetKind = "talent" | "external_influencer";
+
+async function syncFromInstagram(
+  kind: SyncTargetKind,
+  targetId: string,
+  pathToRevalidate: string,
+) {
   const profile = await requireProfile();
   await checkRateLimit(profile.id);
   const supabase = await createClient();
 
-  const { data: talent, error: tErr } = await supabase
-    .from("talents")
+  const table = kind === "talent" ? "talents" : "external_influencers";
+
+  const { data: target, error: tErr } = await supabase
+    .from(table)
     .select("id, ig_handle")
-    .eq("id", talentId)
+    .eq("id", targetId)
     .single();
-  if (tErr || !talent) throw new Error("Talent not found");
+  if (tErr || !target) throw new Error(`${kind} not found`);
 
   const { data: runRow, error: runErr } = await supabase
     .from("ig_sync_runs")
     .insert({
-      target_kind: "talent",
-      target_id: talent.id,
-      ig_handle: talent.ig_handle,
+      target_kind: kind,
+      target_id: target.id,
+      ig_handle: target.ig_handle,
       status: "running",
       triggered_by: profile.id,
     })
@@ -60,13 +68,15 @@ export async function syncTalentFromInstagram(talentId: string) {
   if (runErr || !runRow) throw new Error(runErr?.message ?? "Failed to start sync");
 
   try {
-    const result = await runIgSync(talent.ig_handle);
+    const result = await runIgSync(target.ig_handle);
 
-    const updates: Record<string, unknown> = { ig_metrics_synced_at: new Date().toISOString() };
+    const updates: Record<string, unknown> = {
+      ig_metrics_synced_at: new Date().toISOString(),
+    };
     if (result.followers != null) updates.ig_followers = result.followers;
     if (result.avg_reel_views != null) updates.avg_reel_views = result.avg_reel_views;
     if (Object.keys(updates).length > 1) {
-      const { error: upErr } = await supabase.from("talents").update(updates).eq("id", talent.id);
+      const { error: upErr } = await supabase.from(table).update(updates).eq("id", target.id);
       if (upErr) throw new Error(upErr.message);
     }
 
@@ -83,7 +93,7 @@ export async function syncTalentFromInstagram(talentId: string) {
       })
       .eq("id", runRow.id);
 
-    revalidatePath(`/talents/${talentId}`);
+    revalidatePath(pathToRevalidate);
     return { ok: true, ...result };
   } catch (err) {
     const message =
@@ -98,4 +108,16 @@ export async function syncTalentFromInstagram(talentId: string) {
       .eq("id", runRow.id);
     throw new Error(message);
   }
+}
+
+export async function syncTalentFromInstagram(talentId: string) {
+  return syncFromInstagram("talent", talentId, `/talents/${talentId}`);
+}
+
+export async function syncInfluencerFromInstagram(influencerId: string) {
+  return syncFromInstagram(
+    "external_influencer",
+    influencerId,
+    `/influencers/${influencerId}`,
+  );
 }

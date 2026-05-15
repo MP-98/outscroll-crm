@@ -1,0 +1,224 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { ExternalLink, Search, Sparkles } from "lucide-react";
+import type { ColumnDef } from "@tanstack/react-table";
+import { DataTable } from "@/components/tables/data-table";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { EmptyState } from "@/components/ui/empty-state";
+import { formatCompact, formatINR } from "@/lib/currency";
+import { fmtRelative } from "@/lib/date";
+import { igUrl, normalizeIgHandle } from "@/lib/ig";
+
+export interface InfluencerRow {
+  id: string;
+  full_name: string | null;
+  ig_handle: string;
+  ig_followers: number | null;
+  avg_reel_views: number | null;
+  niches: string[];
+  city: string | null;
+  rate_reel: number | null;
+  rate_story: number | null;
+  rate_post: number | null;
+  tags: string[];
+  notes: string | null;
+  campaign_count: number;
+  last_activity: string | null;
+}
+
+interface Props {
+  rows: InfluencerRow[];
+  niches: string[];
+}
+
+export function InfluencersTable({ rows, niches }: Props) {
+  const router = useRouter();
+  const [search, setSearch] = useState("");
+  const [niche, setNiche] = useState<string>("all");
+  const [city, setCity] = useState<string>("all");
+
+  const cities = useMemo(
+    () =>
+      Array.from(new Set(rows.map((r) => r.city).filter(Boolean) as string[])).sort(),
+    [rows],
+  );
+
+  const filtered = rows.filter((r) => {
+    const q = search.trim().toLowerCase();
+    if (
+      q &&
+      !(r.full_name?.toLowerCase().includes(q) ?? false) &&
+      !r.ig_handle.toLowerCase().includes(q)
+    )
+      return false;
+    if (niche !== "all" && !r.niches.includes(niche)) return false;
+    if (city !== "all" && r.city !== city) return false;
+    return true;
+  });
+
+  const columns: ColumnDef<InfluencerRow>[] = [
+    {
+      accessorKey: "full_name",
+      header: "Name",
+      cell: ({ row }) => (
+        <span className="font-medium">{row.original.full_name ?? "—"}</span>
+      ),
+    },
+    {
+      accessorKey: "ig_handle",
+      header: "Instagram",
+      cell: ({ row }) => (
+        <a
+          href={igUrl(row.original.ig_handle)}
+          target="_blank"
+          rel="noopener"
+          onClick={(e) => e.stopPropagation()}
+          className="inline-flex items-center gap-1 text-muted-foreground hover:text-primary"
+        >
+          @{normalizeIgHandle(row.original.ig_handle)}
+          <ExternalLink className="h-3 w-3" />
+        </a>
+      ),
+    },
+    {
+      accessorKey: "ig_followers",
+      header: "Followers",
+      cell: ({ row }) => (
+        <span className="tabular-nums text-muted-foreground">
+          {formatCompact(row.original.ig_followers)}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "avg_reel_views",
+      header: "Avg reels",
+      cell: ({ row }) => (
+        <span className="tabular-nums text-muted-foreground">
+          {formatCompact(row.original.avg_reel_views)}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "niches",
+      header: "Niches",
+      enableSorting: false,
+      cell: ({ row }) => (
+        <div className="flex flex-wrap gap-1 max-w-[14rem]">
+          {row.original.niches.slice(0, 3).map((n) => (
+            <Badge key={n} className="text-[10px]">
+              {n}
+            </Badge>
+          ))}
+          {row.original.niches.length > 3 ? (
+            <span className="text-[11px] text-muted-foreground">
+              +{row.original.niches.length - 3}
+            </span>
+          ) : null}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "rate_reel",
+      header: "Reel",
+      cell: ({ row }) => (
+        <span className="tabular-nums text-xs text-muted-foreground">
+          {formatINR(row.original.rate_reel)}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "rate_story",
+      header: "Story",
+      cell: ({ row }) => (
+        <span className="tabular-nums text-xs text-muted-foreground">
+          {formatINR(row.original.rate_story)}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "campaign_count",
+      header: "Campaigns",
+      cell: ({ row }) => (
+        <span className="tabular-nums">{row.original.campaign_count}</span>
+      ),
+    },
+    {
+      accessorKey: "last_activity",
+      header: "Last activity",
+      cell: ({ row }) => (
+        <span className="text-xs text-muted-foreground">
+          {fmtRelative(row.original.last_activity)}
+        </span>
+      ),
+    },
+  ];
+
+  return (
+    <div className="px-5 py-4 space-y-3">
+      <div className="flex flex-wrap gap-2 items-center">
+        <div className="relative flex-1 min-w-[12rem] max-w-xs">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Input
+            placeholder="Search name or handle…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-8"
+          />
+        </div>
+        <Select value={niche} onValueChange={setNiche}>
+          <SelectTrigger className="w-36">
+            <SelectValue placeholder="Niche" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All niches</SelectItem>
+            {niches.map((n) => (
+              <SelectItem key={n} value={n}>
+                {n}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={city} onValueChange={setCity}>
+          <SelectTrigger className="w-32">
+            <SelectValue placeholder="City" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All cities</SelectItem>
+            {cities.map((c) => (
+              <SelectItem key={c} value={c}>
+                {c}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <span className="ml-auto text-xs text-muted-foreground tabular-nums">
+          {filtered.length} of {rows.length}
+        </span>
+      </div>
+      <div className="rounded-lg border border-border bg-card overflow-hidden">
+        <DataTable
+          columns={columns}
+          data={filtered}
+          onRowClick={(row) => router.push(`/influencers/${row.id}`)}
+          emptyState={
+            <EmptyState
+              icon={<Sparkles />}
+              title="No influencers match"
+              description="Adjust filters or add an influencer to the pool."
+            />
+          }
+        />
+      </div>
+    </div>
+  );
+}

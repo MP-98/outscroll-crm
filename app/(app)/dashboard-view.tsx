@@ -2,8 +2,17 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ArrowDownRight, ArrowUpRight, MessagesSquare, Activity, Clock, Snail } from "lucide-react";
+import {
+  ArrowDownRight,
+  ArrowUpRight,
+  MessagesSquare,
+  Activity,
+  Clock,
+  Snail,
+  Megaphone,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { fmtRelative } from "@/lib/date";
 import { cn } from "@/lib/utils";
@@ -21,10 +30,26 @@ export interface DashboardData {
   leaderboard: Array<{
     id: string;
     full_name: string;
-    outreaches_created: number;
-    activities_logged: number;
+    talent_outreaches: number;
+    talent_activities: number;
+    campaign_outreaches: number;
+    campaign_activities: number;
   }>;
-  per_talent: Array<{ id: string; name: string; brands_pitched: number; last_at: string | null }>;
+  per_talent: Array<{
+    id: string;
+    name: string;
+    brands_pitched: number;
+    last_at: string | null;
+  }>;
+  active_campaigns: Array<{
+    id: string;
+    name: string;
+    managed_brand_id: string;
+    managed_brand_name: string;
+    contacted: number;
+    confirmed: number;
+    paid: number;
+  }>;
 }
 
 export function DashboardView({ data }: { data: DashboardData }) {
@@ -65,12 +90,14 @@ export function DashboardView({ data }: { data: DashboardData }) {
           label="Outreaches created"
           value={data.cards.outreaches_created}
           delta={data.cards.outreaches_created - data.cards.prior_outreaches_created}
+          hint="Talent + campaign"
         />
         <DeltaCard
           icon={<Activity />}
           label="Activities logged"
           value={data.cards.activities_logged}
           delta={data.cards.activities_logged - data.cards.prior_activities_logged}
+          hint="Both sides"
         />
         <Card>
           <CardContent className="p-4">
@@ -79,7 +106,9 @@ export function DashboardView({ data }: { data: DashboardData }) {
               Follow-ups due today
             </div>
             <div className="mt-2 flex items-baseline justify-between">
-              <span className="text-2xl font-semibold tabular-nums">{data.cards.due_today}</span>
+              <span className="text-2xl font-semibold tabular-nums">
+                {data.cards.due_today}
+              </span>
               <Link href="/inbox" className="text-xs text-primary hover:underline">
                 Open inbox →
               </Link>
@@ -93,7 +122,9 @@ export function DashboardView({ data }: { data: DashboardData }) {
               Talents idle 14d+
             </div>
             <div className="mt-2 flex items-baseline justify-between">
-              <span className="text-2xl font-semibold tabular-nums">{data.cards.idle_talents}</span>
+              <span className="text-2xl font-semibold tabular-nums">
+                {data.cards.idle_talents}
+              </span>
               <Link href="/talents?stale=14" className="text-xs text-primary hover:underline">
                 View →
               </Link>
@@ -102,10 +133,61 @@ export function DashboardView({ data }: { data: DashboardData }) {
         </Card>
       </div>
 
+      {/* Active campaigns row */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Megaphone className="h-4 w-4" />
+            Active campaigns
+            <Badge variant="outline">{data.active_campaigns.length}</Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          {data.active_campaigns.length === 0 ? (
+            <p className="px-4 py-6 text-xs text-muted-foreground text-center">
+              No campaigns currently live.
+            </p>
+          ) : (
+            <ul className="divide-y divide-border text-sm">
+              {data.active_campaigns.map((c) => (
+                <li key={c.id}>
+                  <Link
+                    href={`/campaigns/${c.id}`}
+                    className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-3 px-4 py-2.5 hover:bg-accent"
+                  >
+                    <div className="min-w-0">
+                      <div className="font-medium truncate">{c.name}</div>
+                      <Link
+                        href={`/managed-brands/${c.managed_brand_id}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-xs text-muted-foreground hover:text-primary"
+                      >
+                        {c.managed_brand_name}
+                      </Link>
+                    </div>
+                    <span className="text-xs text-muted-foreground tabular-nums">
+                      {c.contacted} contacted
+                    </span>
+                    <span className="text-xs text-muted-foreground tabular-nums">
+                      {c.confirmed} confirmed
+                    </span>
+                    <Badge variant={c.paid > 0 ? "success" : "outline"} className="text-[10px]">
+                      {c.paid} paid
+                    </Badge>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm">Leaderboard ({data.period.replace("_", " ")})</CardTitle>
+            <CardTitle className="text-sm">
+              Leaderboard ({data.period.replace("_", " ")})
+            </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             {data.leaderboard.length === 0 ? (
@@ -115,10 +197,20 @@ export function DashboardView({ data }: { data: DashboardData }) {
             ) : (
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border text-xs uppercase tracking-wide text-muted-foreground">
+                  <tr className="border-b border-border text-[11px] uppercase tracking-wide text-muted-foreground">
                     <th className="text-left font-medium px-4 py-2">Person</th>
-                    <th className="text-right font-medium px-4 py-2">Outreaches</th>
-                    <th className="text-right font-medium px-4 py-2">Activities</th>
+                    <th className="text-right font-medium px-4 py-2" title="Talent outreaches">
+                      T-O
+                    </th>
+                    <th className="text-right font-medium px-4 py-2" title="Talent activities">
+                      T-A
+                    </th>
+                    <th className="text-right font-medium px-4 py-2" title="Campaign outreaches">
+                      C-O
+                    </th>
+                    <th className="text-right font-medium px-4 py-2" title="Campaign activities">
+                      C-A
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -126,10 +218,16 @@ export function DashboardView({ data }: { data: DashboardData }) {
                     <tr key={u.id} className="border-b border-border last:border-b-0">
                       <td className="px-4 py-2">{u.full_name}</td>
                       <td className="px-4 py-2 text-right tabular-nums">
-                        {u.outreaches_created}
+                        {u.talent_outreaches}
                       </td>
                       <td className="px-4 py-2 text-right tabular-nums">
-                        {u.activities_logged}
+                        {u.talent_activities}
+                      </td>
+                      <td className="px-4 py-2 text-right tabular-nums">
+                        {u.campaign_outreaches}
+                      </td>
+                      <td className="px-4 py-2 text-right tabular-nums">
+                        {u.campaign_activities}
                       </td>
                     </tr>
                   ))}
@@ -180,11 +278,13 @@ function DeltaCard({
   label,
   value,
   delta,
+  hint,
 }: {
   icon: React.ReactNode;
   label: string;
   value: number;
   delta: number;
+  hint?: string;
 }) {
   const positive = delta > 0;
   const negative = delta < 0;
@@ -214,6 +314,11 @@ function DeltaCard({
             </span>
           ) : null}
         </div>
+        {hint ? (
+          <div className="text-[10px] text-muted-foreground mt-1 uppercase tracking-wider">
+            {hint}
+          </div>
+        ) : null}
       </CardContent>
     </Card>
   );

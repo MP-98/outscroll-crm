@@ -146,6 +146,78 @@ export interface Outreach {
   updated_at: string;
 }
 
+export interface ManagedBrand {
+  id: string;
+  name: string;
+  industry: string | null;
+  ig_handle: string | null;
+  website: string | null;
+  monthly_retainer: number | null;
+  status: ManagedBrandStatus;
+  primary_contact_name: string | null;
+  primary_contact_email: string | null;
+  primary_contact_phone: string | null;
+  notes: string | null;
+  onboarded_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ExternalInfluencer {
+  id: string;
+  full_name: string | null;
+  ig_handle: string;
+  ig_followers: number | null;
+  avg_reel_views: number | null;
+  ig_metrics_synced_at: string | null;
+  niches: string[];
+  city: string | null;
+  contact_email: string | null;
+  contact_phone: string | null;
+  rate_reel: number | null;
+  rate_story: number | null;
+  rate_post: number | null;
+  notes: string | null;
+  tags: string[];
+  created_at: string;
+}
+
+export interface Campaign {
+  id: string;
+  managed_brand_id: string;
+  name: string;
+  brief: string | null;
+  budget: number | null;
+  deliverable_target: string | null;
+  starts_on: string | null;
+  ends_on: string | null;
+  status: CampaignStatus;
+  owner_id: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CampaignOutreach {
+  id: string;
+  campaign_id: string;
+  external_influencer_id: string | null;
+  talent_id: string | null;
+  channel: Channel | null;
+  status: CampaignOutreachStatus;
+  proposed_amount: number | null;
+  agreed_amount: number | null;
+  deliverables: string | null;
+  deliverable_done: boolean;
+  next_followup_at: string;
+  owner_id: string | null;
+  payment_status: CampaignPaymentStatus;
+  paid_on: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface OutreachActivity {
   id: string;
   outreach_id: string;

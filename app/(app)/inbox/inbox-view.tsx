@@ -13,15 +13,19 @@ import { StatusPill } from "@/components/status-pill";
 import { EmptyState } from "@/components/ui/empty-state";
 import { fmtDate, fmtRelative } from "@/lib/date";
 import { snoozeOutreach, transitionStatus } from "@/server/actions/outreaches";
+import {
+  snoozeCampaignOutreach,
+  transitionCampaignOutreachStatus,
+} from "@/server/actions/campaign-outreaches";
 import { addDays } from "date-fns";
 
 export interface InboxItem {
   id: string;
   source: "outreach" | "campaign";
-  talent_id: string;
-  brand_id: string;
-  talent_name: string;
-  brand_name: string;
+  /** Talent name (talent side) or influencer/talent name (campaign side). */
+  who_name: string;
+  /** Brand name (talent side) or campaign name (campaign side). */
+  ref_name: string;
   channel: string;
   status: string;
   next_followup_at: string;
@@ -39,7 +43,15 @@ export function InboxView({
   myUserId: string;
 }) {
   const [mineOnly, setMineOnly] = useState(true);
-  const filtered = items.filter((i) => (mineOnly ? i.owner_id === myUserId : true));
+  const [side, setSide] = useState<"all" | "talent" | "campaign">("all");
+
+  const filtered = items
+    .filter((i) => (mineOnly ? i.owner_id === myUserId : true))
+    .filter((i) => {
+      if (side === "all") return true;
+      if (side === "talent") return i.source === "outreach";
+      return i.source === "campaign";
+    });
 
   const due = filtered.filter((i) => i.next_followup_at === today);
   const overdue = filtered.filter((i) => i.next_followup_at < today);
@@ -47,7 +59,7 @@ export function InboxView({
 
   return (
     <div className="px-5 py-4 space-y-4">
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-wrap">
         <Button
           size="sm"
           variant={mineOnly ? "default" : "outline"}
@@ -62,6 +74,32 @@ export function InboxView({
         >
           All team
         </Button>
+        <div className="ml-2 inline-flex rounded-md border border-border bg-muted/30 p-0.5">
+          <Button
+            type="button"
+            variant={side === "all" ? "secondary" : "ghost"}
+            size="sm"
+            onClick={() => setSide("all")}
+          >
+            All
+          </Button>
+          <Button
+            type="button"
+            variant={side === "talent" ? "secondary" : "ghost"}
+            size="sm"
+            onClick={() => setSide("talent")}
+          >
+            Talent
+          </Button>
+          <Button
+            type="button"
+            variant={side === "campaign" ? "secondary" : "ghost"}
+            size="sm"
+            onClick={() => setSide("campaign")}
+          >
+            Campaign
+          </Button>
+        </div>
         <span className="ml-auto text-xs text-muted-foreground">
           {filtered.length} item{filtered.length === 1 ? "" : "s"}
         </span>
@@ -82,7 +120,7 @@ export function InboxView({
           count={overdue.length}
         >
           {overdue.map((i) => (
-            <InboxRow key={i.id} item={i} variant="overdue" />
+            <InboxRow key={`${i.source}-${i.id}`} item={i} variant="overdue" />
           ))}
         </Section>
       ) : null}
@@ -94,7 +132,7 @@ export function InboxView({
           count={due.length}
         >
           {due.map((i) => (
-            <InboxRow key={i.id} item={i} variant="due" />
+            <InboxRow key={`${i.source}-${i.id}`} item={i} variant="due" />
           ))}
         </Section>
       ) : null}
@@ -106,7 +144,7 @@ export function InboxView({
           count={upcoming.length}
         >
           {upcoming.map((i) => (
-            <InboxRow key={i.id} item={i} variant="upcoming" />
+            <InboxRow key={`${i.source}-${i.id}`} item={i} variant="upcoming" />
           ))}
         </Section>
       ) : null}
@@ -141,19 +179,68 @@ function Section({
   );
 }
 
-function InboxRow({ item, variant }: { item: InboxItem; variant: "overdue" | "due" | "upcoming" }) {
+function InboxRow({
+  item,
+  variant,
+}: {
+  item: InboxItem;
+  variant: "overdue" | "due" | "upcoming";
+}) {
   const [, start] = useTransition();
   const router = useRouter();
+
+  const href =
+    item.source === "campaign"
+      ? `/campaign-outreaches/${item.id}`
+      : `/outreaches/${item.id}`;
+
+  function onSnooze() {
+    const next = addDays(new Date(item.next_followup_at), 3).toISOString().slice(0, 10);
+    start(async () => {
+      try {
+        if (item.source === "campaign") {
+          await snoozeCampaignOutreach(item.id, next);
+        } else {
+          await snoozeOutreach(item.id, next);
+        }
+        toast.success("Snoozed");
+        router.refresh();
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed");
+      }
+    });
+  }
+
+  function onMarkPaid() {
+    start(async () => {
+      try {
+        if (item.source === "campaign") {
+          await transitionCampaignOutreachStatus(item.id, "paid");
+        } else {
+          await transitionStatus(item.id, "paid");
+        }
+        toast.success("Marked paid");
+        router.refresh();
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed");
+      }
+    });
+  }
 
   return (
     <li className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-accent">
       <ChannelIcon channel={item.channel} />
       <div className="min-w-0 flex-1">
-        <Link href={`/outreaches/${item.id}`} className="font-medium hover:text-primary">
-          {item.talent_name}
+        <Link href={href} className="font-medium hover:text-primary">
+          {item.who_name}
         </Link>
         <span className="text-muted-foreground"> ↔ </span>
-        <span className="text-foreground">{item.brand_name}</span>
+        <span className="text-foreground">{item.ref_name}</span>
+        {item.source === "campaign" ? (
+          <Badge variant="outline" className="ml-1.5 text-[10px]">
+            Campaign
+          </Badge>
+        ) : null}
         <div className="text-xs text-muted-foreground mt-0.5">
           Last activity {fmtRelative(item.last_activity)}
         </div>
@@ -172,35 +259,14 @@ function InboxRow({ item, variant }: { item: InboxItem; variant: "overdue" | "du
       </span>
       <button
         title="Snooze 3 days"
-        onClick={() => {
-          const next = addDays(new Date(item.next_followup_at), 3).toISOString().slice(0, 10);
-          start(async () => {
-            try {
-              await snoozeOutreach(item.id, next);
-              toast.success("Snoozed");
-              router.refresh();
-            } catch (err) {
-              toast.error(err instanceof Error ? err.message : "Failed");
-            }
-          });
-        }}
+        onClick={onSnooze}
         className="text-muted-foreground hover:text-foreground"
       >
         <Snail className="h-3.5 w-3.5" />
       </button>
       <button
         title="Mark paid"
-        onClick={() => {
-          start(async () => {
-            try {
-              await transitionStatus(item.id, "paid");
-              toast.success("Marked paid");
-              router.refresh();
-            } catch (err) {
-              toast.error(err instanceof Error ? err.message : "Failed");
-            }
-          });
-        }}
+        onClick={onMarkPaid}
         className="text-muted-foreground hover:text-success"
       >
         <Check className="h-3.5 w-3.5" />
