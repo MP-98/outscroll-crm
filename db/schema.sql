@@ -137,9 +137,9 @@ create table if not exists outreaches (
   primary_poc_id uuid references brand_pocs(id),
   channel text check (channel in ('ig_dm','linkedin','whatsapp','email','call','other')) not null,
   status text check (status in (
-    'prospected','contacted','in_conversation','brief_received',
+    'not_contacted','prospected','contacted','in_conversation','brief_received',
     'negotiating','confirmed','live','paid','lost','on_hold'
-  )) not null default 'prospected',
+  )) not null default 'not_contacted',
   deliverables text,
   proposed_amount integer,
   agreed_amount integer,
@@ -157,6 +157,14 @@ create table if not exists outreaches (
 -- (see db/v3-fields.sql for the standalone migration).
 alter table outreaches alter column talent_id drop not null;
 alter table outreaches alter column next_followup_at drop not null;
+-- v4: add 'not_contacted' to the status check (see db/v4-fields.sql).
+alter table outreaches drop constraint if exists outreaches_status_check;
+alter table outreaches
+  add constraint outreaches_status_check
+  check (status in (
+    'not_contacted','prospected','contacted','in_conversation','brief_received',
+    'negotiating','confirmed','live','paid','lost','on_hold'
+  ));
 create index if not exists outreaches_status_idx on outreaches(status);
 create index if not exists outreaches_next_followup_at_idx on outreaches(next_followup_at);
 create index if not exists outreaches_talent_id_idx on outreaches(talent_id);

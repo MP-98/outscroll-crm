@@ -10,6 +10,7 @@ import {
 export const channelEnum = z.enum(["ig_dm", "linkedin", "whatsapp", "email", "call", "other"]);
 export const directionEnum = z.enum(["inbound", "outbound"]);
 export const outreachStatusEnum = z.enum([
+  "not_contacted",
   "prospected",
   "contacted",
   "in_conversation",

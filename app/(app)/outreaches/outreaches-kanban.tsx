@@ -13,6 +13,7 @@ import type { OutreachStatus } from "@/lib/supabase/types";
 import type { OutreachRow } from "./outreaches-view";
 
 const STAGES: Array<{ id: OutreachStatus; label: string }> = [
+  { id: "not_contacted", label: "Not contacted" },
   { id: "prospected", label: "Prospected" },
   { id: "contacted", label: "Contacted" },
   { id: "in_conversation", label: "In conversation" },

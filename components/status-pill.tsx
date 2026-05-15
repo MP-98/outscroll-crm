@@ -16,6 +16,7 @@ const STATUS_TONE: Record<string, string> = {
   churned: "bg-muted text-muted-foreground border-border",
 
   // Outreach pipeline
+  not_contacted: "bg-zinc-500/10 text-zinc-500 dark:text-zinc-400 border-zinc-500/15",
   prospected: "bg-zinc-500/10 text-zinc-600 dark:text-zinc-300 border-zinc-500/20",
   shortlisted: "bg-zinc-500/10 text-zinc-600 dark:text-zinc-300 border-zinc-500/20",
   contacted: "bg-blue-500/10 text-blue-600 dark:text-blue-300 border-blue-500/20",

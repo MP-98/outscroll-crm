@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import type { OutreachStatus } from "@/lib/supabase/types";
 
 const ALL: OutreachStatus[] = [
+  "not_contacted",
   "prospected",
   "contacted",
   "in_conversation",

@@ -15,6 +15,7 @@ type Row = Outreach & {
 };
 
 const ACTIVE_STATUSES = new Set([
+  "not_contacted",
   "prospected",
   "contacted",
   "in_conversation",

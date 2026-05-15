@@ -13,6 +13,7 @@ export type ActivityChannel = Channel | "note" | "status_change";
 export type Direction = "outbound" | "inbound" | "internal";
 
 export type OutreachStatus =
+  | "not_contacted"
   | "prospected"
   | "contacted"
   | "in_conversation"

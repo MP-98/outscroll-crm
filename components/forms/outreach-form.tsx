@@ -65,7 +65,7 @@ export function OutreachForm({
       primary_poc_id: null,
       channel: "ig_dm",
       direction: "outbound",
-      status: "prospected",
+      status: "not_contacted",
       deliverables: null,
       proposed_amount: null,
       negotiated_amount: null,
@@ -265,6 +265,7 @@ export function OutreachForm({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="not_contacted">Not contacted</SelectItem>
                 <SelectItem value="prospected">Prospected</SelectItem>
                 <SelectItem value="contacted">Contacted</SelectItem>
                 <SelectItem value="in_conversation">In conversation</SelectItem>

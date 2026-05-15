@@ -8,6 +8,7 @@ import { formatINR } from "@/lib/currency";
 import type { Outreach } from "@/lib/supabase/types";
 
 const STAGES: Array<Outreach["status"]> = [
+  "not_contacted",
   "prospected",
   "contacted",
   "in_conversation",

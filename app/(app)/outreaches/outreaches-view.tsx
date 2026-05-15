@@ -174,6 +174,7 @@ export function OutreachesView({
           <SelectContent>
             <SelectItem value="all">Any stage</SelectItem>
             {[
+              "not_contacted",
               "prospected",
               "contacted",
               "in_conversation",
