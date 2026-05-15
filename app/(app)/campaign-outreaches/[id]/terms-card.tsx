@@ -25,7 +25,7 @@ export interface TermsState {
   deliverables: string | null;
   proposed_amount: number | null;
   agreed_amount: number | null;
-  next_followup_at: string;
+  next_followup_at: string | null;
   payment_status: CampaignPaymentStatus;
   paid_on: string | null;
   deliverable_done: boolean;
@@ -62,10 +62,6 @@ export function TermsCard({
   }
 
   function save() {
-    if (!draft.next_followup_at) {
-      toast.error("Follow-up date is required");
-      return;
-    }
     start(async () => {
       try {
         await updateCampaignOutreach(outreachId, {
@@ -144,9 +140,25 @@ export function TermsCard({
               <Input
                 type="date"
                 value={draft.next_followup_at ?? ""}
-                onChange={(e) => set("next_followup_at", e.target.value)}
-                required
+                onChange={(e) => set("next_followup_at", e.target.value || null)}
+                disabled={draft.next_followup_at === null}
               />
+              <label className="flex items-center gap-2 text-[10px] text-muted-foreground cursor-pointer mt-1">
+                <input
+                  type="checkbox"
+                  checked={draft.next_followup_at === null}
+                  onChange={(e) =>
+                    set(
+                      "next_followup_at",
+                      e.target.checked
+                        ? null
+                        : new Date().toISOString().slice(0, 10),
+                    )
+                  }
+                  className="h-3 w-3"
+                />
+                No follow-up needed
+              </label>
             </Field>
             <div className="grid grid-cols-2 gap-2">
               <Field label="Payment status">
@@ -208,7 +220,10 @@ export function TermsCard({
             <Detail label="Deliverables" value={terms.deliverables ?? "—"} multiline />
             <Detail label="Proposed" value={formatINR(terms.proposed_amount)} />
             <Detail label="Agreed" value={formatINR(terms.agreed_amount)} />
-            <Detail label="Next follow-up" value={fmtDate(terms.next_followup_at)} />
+            <Detail
+              label="Next follow-up"
+              value={terms.next_followup_at ? fmtDate(terms.next_followup_at) : "—"}
+            />
             <Detail
               label="Payment"
               value={terms.payment_status.charAt(0).toUpperCase() +

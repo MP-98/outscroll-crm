@@ -3,7 +3,6 @@ import {
   optionalDateSchema,
   optionalIntSchema,
   optionalStringSchema,
-  requiredDateSchema,
 } from "./common";
 import { channelEnum } from "./outreach";
 
@@ -38,7 +37,7 @@ export const campaignOutreachSchema = z
     agreed_amount: optionalIntSchema.nullable().default(null),
     deliverables: optionalStringSchema.nullable().default(null),
     deliverable_done: z.boolean().default(false),
-    next_followup_at: requiredDateSchema,
+    next_followup_at: optionalDateSchema.nullable().default(null),
     owner_id: z.string().uuid().nullable().optional(),
     payment_status: campaignPaymentStatusEnum.default("pending"),
     paid_on: optionalDateSchema.nullable().default(null),

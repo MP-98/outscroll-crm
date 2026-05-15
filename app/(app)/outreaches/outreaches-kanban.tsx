@@ -5,6 +5,7 @@ import { useTransition, useState } from "react";
 import { differenceInCalendarDays, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { ChannelIcon } from "@/components/channel-icon";
+import { CloseOutreachMenu } from "@/components/close-outreach-menu";
 import { transitionStatus } from "@/server/actions/outreaches";
 import { formatINR } from "@/lib/currency";
 import { cn } from "@/lib/utils";
@@ -96,6 +97,9 @@ export function OutreachKanban({ rows }: { rows: OutreachRow[] }) {
                         <ChannelIcon channel={r.channel} />
                         <div className="text-xs font-medium truncate flex-1">
                           {r.talent_name}
+                        </div>
+                        <div onClick={(e) => e.stopPropagation()}>
+                          <CloseOutreachMenu id={r.id} source="outreach" />
                         </div>
                       </div>
                       <div className="text-[11px] text-muted-foreground truncate mt-0.5">

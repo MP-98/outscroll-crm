@@ -132,7 +132,7 @@ create index if not exists brand_pocs_brand_id_idx on brand_pocs(brand_id);
 -- ─────────────────────────────────────────────────────────────────────────────
 create table if not exists outreaches (
   id uuid primary key default gen_random_uuid(),
-  talent_id uuid not null references talents(id) on delete cascade,
+  talent_id uuid references talents(id) on delete cascade,
   brand_id uuid not null references brands(id) on delete cascade,
   primary_poc_id uuid references brand_pocs(id),
   channel text check (channel in ('ig_dm','linkedin','whatsapp','email','call','other')) not null,
@@ -144,7 +144,7 @@ create table if not exists outreaches (
   proposed_amount integer,
   agreed_amount integer,
   commission_pct numeric(5,2),
-  next_followup_at date not null,
+  next_followup_at date,
   owner_id uuid references profiles(id),
   notes text,
   tags text[] default '{}',
@@ -153,6 +153,10 @@ create table if not exists outreaches (
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
+-- Existing-project safety: relax NOT NULL on talent_id + next_followup_at
+-- (see db/v3-fields.sql for the standalone migration).
+alter table outreaches alter column talent_id drop not null;
+alter table outreaches alter column next_followup_at drop not null;
 create index if not exists outreaches_status_idx on outreaches(status);
 create index if not exists outreaches_next_followup_at_idx on outreaches(next_followup_at);
 create index if not exists outreaches_talent_id_idx on outreaches(talent_id);
@@ -288,6 +292,8 @@ create index if not exists campaign_outreaches_owner_id_idx on campaign_outreach
 -- Phase 2: deliverable_done flag (see db/phase2-fields.sql).
 alter table campaign_outreaches
   add column if not exists deliverable_done boolean default false;
+-- v3: allow no-follow-up (see db/v3-fields.sql).
+alter table campaign_outreaches alter column next_followup_at drop not null;
 
 -- Auto-log status_change activity on campaign_outreaches update.
 create or replace function public.log_campaign_outreach_status_change()

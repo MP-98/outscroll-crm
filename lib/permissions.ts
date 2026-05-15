@@ -25,19 +25,22 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
   { key: "influencers", href: "/influencers", label: "Influencers" },
 ];
 
-export const DEFAULT_MEMBER_SIDEBAR: SidebarKey[] = [
-  "dashboard",
-  "inbox",
-  "talents",
-  "outreaches",
-];
+/** Default sidebar for newly created users (members AND admins).
+ *  Only the seed admin starts with full access; everyone else gets a
+ *  configurable subset that defaults to the two operational tabs. */
+export const DEFAULT_SIDEBAR: SidebarKey[] = ["outreaches", "influencers"];
+
+/** Back-compat alias — older code paths used DEFAULT_MEMBER_SIDEBAR. */
+export const DEFAULT_MEMBER_SIDEBAR = DEFAULT_SIDEBAR;
 
 /** Set of sidebar keys this profile is allowed to access. */
 export function allowedSidebar(profile: Profile): Set<SidebarKey> {
-  if (profile.role === "admin" || profile.is_seed_admin) {
+  // Seed admin always has everything — no way to lock them out by mistake.
+  if (profile.is_seed_admin) {
     return new Set(SIDEBAR_ITEMS.map((i) => i.key));
   }
-  const raw = profile.allowed_sidebar ?? DEFAULT_MEMBER_SIDEBAR;
+  // Everyone else (admin + member) respects their allowed_sidebar.
+  const raw = profile.allowed_sidebar ?? DEFAULT_SIDEBAR;
   return new Set(
     raw.filter((k): k is SidebarKey =>
       SIDEBAR_ITEMS.some((i) => i.key === k),
@@ -75,7 +78,7 @@ export function sidebarKeyFor(pathname: string): SidebarKey | null {
 }
 
 export function canAccessPath(profile: Profile, pathname: string): boolean {
-  if (profile.role === "admin" || profile.is_seed_admin) return true;
+  if (profile.is_seed_admin) return true;
   const key = sidebarKeyFor(pathname);
   if (!key) return true; // Non-gated paths (e.g. /settings/profile)
   return allowedSidebar(profile).has(key);

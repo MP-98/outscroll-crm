@@ -4,7 +4,6 @@ import {
   optionalDecimalSchema,
   optionalIntSchema,
   optionalStringSchema,
-  requiredDateSchema,
   tagsSchema,
 } from "./common";
 
@@ -24,7 +23,13 @@ export const outreachStatusEnum = z.enum([
 ]);
 
 export const outreachSchema = z.object({
-  talent_id: z.string().uuid({ message: "Required" }),
+  // talent_id is now optional: lets you log a brand you want to pitch but
+  // haven't paired with a specific talent yet.
+  talent_id: z
+    .union([z.string().uuid(), z.literal(""), z.null()])
+    .transform((v) => (v ? v : null))
+    .nullable()
+    .optional(),
   brand_id: z.string().uuid({ message: "Required" }),
   primary_poc_id: z.string().uuid().nullable().optional(),
   channel: channelEnum,
@@ -36,7 +41,9 @@ export const outreachSchema = z.object({
   agreed_amount: optionalIntSchema.nullable().default(null),
   commission_pct: optionalDecimalSchema.nullable().default(null),
   reached_out_at: optionalDateSchema.nullable().default(null),
-  next_followup_at: requiredDateSchema,
+  // next_followup_at is now optional: lets you mark an outreach as "no follow-up"
+  // when the brand said no or never replied. Null rows are hidden from Inbox.
+  next_followup_at: optionalDateSchema.nullable().default(null),
   owner_id: z.string().uuid().nullable().optional(),
   notes: optionalStringSchema.nullable().default(null),
   tags: tagsSchema,

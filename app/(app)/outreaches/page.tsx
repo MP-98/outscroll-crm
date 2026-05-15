@@ -30,7 +30,7 @@ export default async function OutreachesPage() {
     id: o.id,
     talent_id: o.talent_id,
     brand_id: o.brand_id,
-    talent_name: (o as { talent?: { full_name?: string } }).talent?.full_name ?? "—",
+    talent_name: (o as { talent?: { full_name?: string } }).talent?.full_name ?? "Talent TBD",
     brand_name: (o as { brand?: { name?: string } }).brand?.name ?? "—",
     status: o.status,
     channel: o.channel,

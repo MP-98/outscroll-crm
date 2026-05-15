@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { ChannelIcon } from "@/components/channel-icon";
 import { StatusPill } from "@/components/status-pill";
 import { EmptyState } from "@/components/ui/empty-state";
+import { CloseOutreachMenu } from "@/components/close-outreach-menu";
 import { fmtDate, fmtRelative } from "@/lib/date";
 import { snoozeOutreach, transitionStatus } from "@/server/actions/outreaches";
 import {
@@ -271,6 +272,7 @@ function InboxRow({
       >
         <Check className="h-3.5 w-3.5" />
       </button>
+      <CloseOutreachMenu id={item.id} source={item.source} />
     </li>
   );
 }

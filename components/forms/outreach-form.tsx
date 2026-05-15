@@ -128,15 +128,18 @@ export function OutreachForm({
       <Section title="Parties">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="space-y-1.5">
-            <Label>Talent *</Label>
+            <Label>Talent</Label>
             <Select
-              value={form.watch("talent_id") || ""}
-              onValueChange={(v) => form.setValue("talent_id", v)}
+              value={form.watch("talent_id") ?? "tbd"}
+              onValueChange={(v) =>
+                form.setValue("talent_id", v === "tbd" ? null : v)
+              }
             >
               <SelectTrigger>
-                <SelectValue placeholder="Pick talent" />
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="tbd">— Decide later —</SelectItem>
                 {talents.map((t) => (
                   <SelectItem key={t.id} value={t.id}>
                     {t.label}
@@ -144,11 +147,10 @@ export function OutreachForm({
                 ))}
               </SelectContent>
             </Select>
-            {form.formState.errors.talent_id ? (
-              <p className="text-[11px] text-destructive">
-                {form.formState.errors.talent_id.message}
-              </p>
-            ) : null}
+            <p className="text-[11px] text-muted-foreground">
+              Skip if you&apos;re tracking a brand to pitch but haven&apos;t paired
+              a talent yet.
+            </p>
           </div>
 
           <div className="space-y-1.5">
@@ -307,18 +309,39 @@ export function OutreachForm({
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="next_followup_at">Follow-up due *</Label>
-            <Input
-              id="next_followup_at"
-              type="date"
-              required
-              {...form.register("next_followup_at")}
-            />
-            {form.formState.errors.next_followup_at ? (
-              <p className="text-[11px] text-destructive">
-                {form.formState.errors.next_followup_at.message}
-              </p>
-            ) : null}
+            <Label htmlFor="next_followup_at">Follow-up due</Label>
+            {(() => {
+              const raw = form.watch("next_followup_at");
+              const date = typeof raw === "string" ? raw : "";
+              const noFollowup = raw === null;
+              return (
+                <>
+                  <Input
+                    id="next_followup_at"
+                    type="date"
+                    value={date}
+                    onChange={(e) =>
+                      form.setValue("next_followup_at", e.target.value || null)
+                    }
+                    disabled={noFollowup}
+                  />
+                  <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={noFollowup}
+                      onChange={(e) =>
+                        form.setValue(
+                          "next_followup_at",
+                          e.target.checked ? null : todayISO(),
+                        )
+                      }
+                      className="h-3.5 w-3.5"
+                    />
+                    No follow-up needed (won&apos;t appear in inbox)
+                  </label>
+                </>
+              );
+            })()}
           </div>
         </div>
       </Section>

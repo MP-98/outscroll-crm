@@ -20,11 +20,12 @@ import { ChannelIcon, ChannelLabel } from "@/components/channel-icon";
 import { formatINR } from "@/lib/currency";
 import { fmtDate, fmtRelative } from "@/lib/date";
 import { OutreachKanban } from "./outreaches-kanban";
+import { CloseOutreachMenu } from "@/components/close-outreach-menu";
 import type { OutreachStatus } from "@/lib/supabase/types";
 
 export interface OutreachRow {
   id: string;
-  talent_id: string;
+  talent_id: string | null;
   brand_id: string;
   talent_name: string;
   brand_name: string;
@@ -34,7 +35,7 @@ export interface OutreachRow {
   owner_name: string | null;
   agreed_amount: number | null;
   proposed_amount: number | null;
-  next_followup_at: string;
+  next_followup_at: string | null;
   updated_at: string;
   created_at: string;
 }
@@ -118,6 +119,9 @@ export function OutreachesView({
       header: "Follow-up",
       cell: ({ row }) => {
         const d = row.original.next_followup_at;
+        if (!d) {
+          return <span className="text-xs text-muted-foreground italic">No follow-up</span>;
+        }
         const past = new Date(d) < new Date(new Date().toDateString());
         return (
           <span
@@ -137,6 +141,16 @@ export function OutreachesView({
       header: "Last activity",
       cell: ({ row }) => (
         <span className="text-xs text-muted-foreground">{fmtRelative(row.original.updated_at)}</span>
+      ),
+    },
+    {
+      id: "actions",
+      header: "",
+      enableSorting: false,
+      cell: ({ row }) => (
+        <div onClick={(e) => e.stopPropagation()}>
+          <CloseOutreachMenu id={row.original.id} source="outreach" />
+        </div>
       ),
     },
   ];

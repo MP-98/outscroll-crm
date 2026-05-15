@@ -29,7 +29,7 @@ export interface DealTerms {
   commission_pct: number | null;
   direction: OutreachDirection | null;
   reached_out_at: string | null;
-  next_followup_at: string;
+  next_followup_at: string | null;
   paid_at: string | null;
   lost_reason: string | null;
 }
@@ -67,10 +67,6 @@ export function DealTermsCard({
   }
 
   function save() {
-    if (!draft.next_followup_at) {
-      toast.error("Follow-up date is required");
-      return;
-    }
     start(async () => {
       try {
         await updateOutreach(outreachId, {
@@ -189,9 +185,25 @@ export function DealTermsCard({
                 <Input
                   type="date"
                   value={draft.next_followup_at ?? ""}
-                  onChange={(e) => set("next_followup_at", e.target.value)}
-                  required
+                  onChange={(e) => set("next_followup_at", e.target.value || null)}
+                  disabled={draft.next_followup_at === null}
                 />
+                <label className="flex items-center gap-2 text-[10px] text-muted-foreground cursor-pointer mt-1">
+                  <input
+                    type="checkbox"
+                    checked={draft.next_followup_at === null}
+                    onChange={(e) =>
+                      set(
+                        "next_followup_at",
+                        e.target.checked
+                          ? null
+                          : new Date().toISOString().slice(0, 10),
+                      )
+                    }
+                    className="h-3 w-3"
+                  />
+                  No follow-up needed
+                </label>
               </Field>
             </div>
             <div className="grid grid-cols-2 gap-2">
@@ -242,7 +254,10 @@ export function DealTermsCard({
               label="Reached out"
               value={terms.reached_out_at ? fmtDate(terms.reached_out_at) : "—"}
             />
-            <Detail label="Next follow-up" value={fmtDate(terms.next_followup_at)} />
+            <Detail
+              label="Next follow-up"
+              value={terms.next_followup_at ? fmtDate(terms.next_followup_at) : "—"}
+            />
             {terms.paid_at ? (
               <Detail label="Paid" value={fmtDate(terms.paid_at)} />
             ) : null}

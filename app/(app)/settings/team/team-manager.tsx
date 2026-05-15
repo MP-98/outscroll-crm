@@ -360,17 +360,45 @@ export function TeamManager({
                 ) : null}
               </div>
 
-              {/* Per-member access controls */}
+              {/* Per-member access controls — same UI for admins and members. */}
               {!isSelf && !m.is_seed_admin ? (
-                <div className="ml-10 space-y-2">
+                <div className="ml-10 space-y-3">
+                  <div className="space-y-1.5">
+                    <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                      Accessible tabs
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {SIDEBAR_ITEMS.map((item) => {
+                        const on = allowed.includes(item.key);
+                        return (
+                          <button
+                            type="button"
+                            key={item.key}
+                            disabled={pending || !meCanConfigure}
+                            onClick={() => onToggleSidebar(m, item.key, !on)}
+                            className={cn(
+                              "inline-flex items-center rounded-md border px-2 py-0.5 text-xs transition-colors",
+                              on
+                                ? "border-primary/30 bg-primary/10 text-primary hover:bg-primary/15"
+                                : "border-border bg-background text-muted-foreground hover:bg-accent",
+                            )}
+                          >
+                            {item.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Admin-only: configure-team permission, gated to seed admin. */}
                   {isAdmin ? (
-                    /* Admins see all tabs by default; only seed admin can revoke
-                       their permission to configure others. */
                     meIsSeedAdmin ? (
                       <button
                         type="button"
                         disabled={pending}
-                        onClick={() => onToggleAdminConfigure(m, !m.can_configure_team)}
+                        onClick={() =>
+                          onToggleAdminConfigure(m, !m.can_configure_team)
+                        }
                         className={cn(
                           "inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs transition-colors",
                           m.can_configure_team
@@ -380,49 +408,23 @@ export function TeamManager({
                       >
                         {m.can_configure_team ? (
                           <>
-                            <ShieldCheck className="h-3 w-3" /> Can configure team — click to revoke
+                            <ShieldCheck className="h-3 w-3" /> Can configure team
+                            — click to revoke
                           </>
                         ) : (
                           <>
-                            <ShieldOff className="h-3 w-3" /> Cannot configure team — click to grant
+                            <ShieldOff className="h-3 w-3" /> Cannot configure team
+                            — click to grant
                           </>
                         )}
                       </button>
                     ) : (
                       <p className="text-[11px] text-muted-foreground">
-                        Admin {m.can_configure_team ? "can" : "cannot"} configure team. Only the
-                        seed admin can change this.
+                        Admin {m.can_configure_team ? "can" : "cannot"} configure
+                        team. Only the seed admin can change this.
                       </p>
                     )
-                  ) : (
-                    /* Member: per-tab checkboxes */
-                    <div className="space-y-1.5">
-                      <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                        Accessible tabs
-                      </div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {SIDEBAR_ITEMS.map((item) => {
-                          const on = allowed.includes(item.key);
-                          return (
-                            <button
-                              type="button"
-                              key={item.key}
-                              disabled={pending || !meCanConfigure}
-                              onClick={() => onToggleSidebar(m, item.key, !on)}
-                              className={cn(
-                                "inline-flex items-center rounded-md border px-2 py-0.5 text-xs transition-colors",
-                                on
-                                  ? "border-primary/30 bg-primary/10 text-primary hover:bg-primary/15"
-                                  : "border-border bg-background text-muted-foreground hover:bg-accent",
-                              )}
-                            >
-                              {item.label}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
+                  ) : null}
                 </div>
               ) : null}
             </div>

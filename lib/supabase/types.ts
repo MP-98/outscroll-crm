@@ -124,7 +124,7 @@ export type OutreachDirection = "inbound" | "outbound";
 
 export interface Outreach {
   id: string;
-  talent_id: string;
+  talent_id: string | null;
   brand_id: string;
   primary_poc_id: string | null;
   channel: Channel;
@@ -136,7 +136,7 @@ export interface Outreach {
   agreed_amount: number | null;
   commission_pct: number | null;
   reached_out_at: string | null;
-  next_followup_at: string;
+  next_followup_at: string | null;
   owner_id: string | null;
   notes: string | null;
   tags: string[];
@@ -209,7 +209,7 @@ export interface CampaignOutreach {
   agreed_amount: number | null;
   deliverables: string | null;
   deliverable_done: boolean;
-  next_followup_at: string;
+  next_followup_at: string | null;
   owner_id: string | null;
   payment_status: CampaignPaymentStatus;
   paid_on: string | null;

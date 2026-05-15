@@ -13,6 +13,7 @@ import { ActivityComposer } from "./activity-composer";
 import { BrandPanel } from "./brand-panel";
 import { DealTermsCard } from "./deal-terms-card";
 import { NotesCard } from "./notes-card";
+import { TalentSelect } from "./talent-select";
 import type { Outreach, Talent, Brand, Profile } from "@/lib/supabase/types";
 
 interface Props {
@@ -24,25 +25,34 @@ export default async function OutreachDetailPage({ params }: Props) {
   await requireProfile();
   const supabase = await createClient();
 
-  const [{ data: outreach }, { data: activities }, { data: profiles }] =
-    await Promise.all([
-      supabase
-        .from("outreaches")
-        .select(
-          `*,
-           talent:talents(id, full_name, ig_handle, default_commission_pct),
-           brand:brands(id, name, ig_handle, industry, website),
-           owner:profiles!outreaches_owner_id_fkey(id, full_name)`,
-        )
-        .eq("id", id)
-        .single(),
-      supabase
-        .from("outreach_activities")
-        .select(`*, author:profiles!outreach_activities_author_id_fkey(id, full_name)`)
-        .eq("outreach_id", id)
-        .order("occurred_at", { ascending: false }),
-      supabase.from("profiles").select("id, full_name").order("full_name"),
-    ]);
+  const [
+    { data: outreach },
+    { data: activities },
+    { data: profiles },
+    { data: talents },
+  ] = await Promise.all([
+    supabase
+      .from("outreaches")
+      .select(
+        `*,
+         talent:talents(id, full_name, ig_handle, default_commission_pct),
+         brand:brands(id, name, ig_handle, industry, website),
+         owner:profiles!outreaches_owner_id_fkey(id, full_name)`,
+      )
+      .eq("id", id)
+      .single(),
+    supabase
+      .from("outreach_activities")
+      .select(`*, author:profiles!outreach_activities_author_id_fkey(id, full_name)`)
+      .eq("outreach_id", id)
+      .order("occurred_at", { ascending: false }),
+    supabase.from("profiles").select("id, full_name").order("full_name"),
+    supabase
+      .from("talents")
+      .select("id, full_name, ig_handle")
+      .neq("status", "offboarded")
+      .order("full_name"),
+  ]);
 
   if (!outreach) notFound();
 
@@ -79,18 +89,31 @@ export default async function OutreachDetailPage({ params }: Props) {
           { label: "Outreaches", href: "/outreaches" },
           {
             label:
-              (o.talent?.full_name ?? "Talent") + " ↔ " + (o.brand?.name ?? "Brand"),
+              (o.talent?.full_name ?? "Talent TBD") +
+              " ↔ " +
+              (o.brand?.name ?? "Brand"),
           },
         ]}
       />
       <div className="border-b border-border px-5 py-4 flex flex-col gap-2">
         <div className="flex flex-wrap items-center gap-3">
-          <Link
-            href={`/talents/${o.talent_id}`}
-            className="text-sm font-semibold hover:text-primary"
-          >
-            {o.talent?.full_name ?? "Talent"}
-          </Link>
+          {o.talent_id ? (
+            <Link
+              href={`/talents/${o.talent_id}`}
+              className="text-sm font-semibold hover:text-primary"
+            >
+              {o.talent?.full_name ?? "Talent"}
+            </Link>
+          ) : (
+            <TalentSelect
+              outreachId={o.id}
+              talentId={null}
+              talents={(talents ?? []).map((t) => ({
+                id: t.id,
+                label: `${t.full_name} · @${t.ig_handle}`,
+              }))}
+            />
+          )}
           <span className="text-muted-foreground">↔</span>
           <Link
             href={`/brands/${o.brand_id}`}

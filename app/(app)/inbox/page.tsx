@@ -24,6 +24,7 @@ export default async function InboxPage() {
       )
       .neq("status", "paid")
       .neq("status", "lost")
+      .not("next_followup_at", "is", null)
       .lte("next_followup_at", sevenDaysOut)
       .order("next_followup_at"),
     supabase
@@ -36,6 +37,7 @@ export default async function InboxPage() {
       )
       .neq("status", "paid")
       .neq("status", "lost")
+      .not("next_followup_at", "is", null)
       .lte("next_followup_at", sevenDaysOut)
       .order("next_followup_at"),
   ]);
@@ -48,11 +50,11 @@ export default async function InboxPage() {
     return {
       id: o.id,
       source: "outreach",
-      who_name: tt?.full_name ?? "—",
+      who_name: tt?.full_name ?? "Talent TBD",
       ref_name: bb?.name ?? "—",
       channel: o.channel,
       status: o.status,
-      next_followup_at: o.next_followup_at,
+      next_followup_at: o.next_followup_at ?? "",
       owner_id: o.owner_id,
       last_activity: o.updated_at,
     };
@@ -91,7 +93,7 @@ export default async function InboxPage() {
       ref_name: cc?.name ?? "—",
       channel: o.channel ?? "other",
       status: o.status,
-      next_followup_at: o.next_followup_at,
+      next_followup_at: o.next_followup_at ?? "",
       owner_id: o.owner_id,
       last_activity: o.updated_at,
     };
