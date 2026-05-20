@@ -15,8 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { EmptyState } from "@/components/ui/empty-state";
-import { formatCompact, formatINR } from "@/lib/currency";
-import { fmtRelative } from "@/lib/date";
+import { formatCompact } from "@/lib/currency";
 import { igUrl, normalizeIgHandle } from "@/lib/ig";
 
 export interface InfluencerRow {
@@ -128,37 +127,28 @@ export function InfluencersTable({ rows, niches }: Props) {
       ),
     },
     {
-      accessorKey: "rate_reel",
-      header: "Reel",
+      accessorKey: "tags",
+      header: "Tags",
+      enableSorting: false,
       cell: ({ row }) => (
-        <span className="tabular-nums text-xs text-muted-foreground">
-          {formatINR(row.original.rate_reel)}
-        </span>
-      ),
-    },
-    {
-      accessorKey: "rate_story",
-      header: "Story",
-      cell: ({ row }) => (
-        <span className="tabular-nums text-xs text-muted-foreground">
-          {formatINR(row.original.rate_story)}
-        </span>
-      ),
-    },
-    {
-      accessorKey: "campaign_count",
-      header: "Campaigns",
-      cell: ({ row }) => (
-        <span className="tabular-nums">{row.original.campaign_count}</span>
-      ),
-    },
-    {
-      accessorKey: "last_activity",
-      header: "Last activity",
-      cell: ({ row }) => (
-        <span className="text-xs text-muted-foreground">
-          {fmtRelative(row.original.last_activity)}
-        </span>
+        <div className="flex flex-wrap gap-1 max-w-[16rem]">
+          {row.original.tags.length === 0 ? (
+            <span className="text-muted-foreground">—</span>
+          ) : (
+            <>
+              {row.original.tags.slice(0, 3).map((t) => (
+                <Badge key={t} variant="outline" className="text-[10px]">
+                  {t}
+                </Badge>
+              ))}
+              {row.original.tags.length > 3 ? (
+                <span className="text-[11px] text-muted-foreground">
+                  +{row.original.tags.length - 3}
+                </span>
+              ) : null}
+            </>
+          )}
+        </div>
       ),
     },
   ];

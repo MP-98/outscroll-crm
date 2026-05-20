@@ -9,6 +9,12 @@ import {
   type ExternalInfluencerInput,
 } from "@/lib/validations/external-influencer";
 
+const DUPLICATE_HANDLE_MSG =
+  "An influencer with this Instagram handle is already in the pool. Search the Influencers list for it.";
+
+// Server actions return { error } for expected failures instead of throwing —
+// Next.js redacts thrown error messages in production, so returning the message
+// is the only way to surface a useful toast to the user.
 export async function createInfluencer(input: ExternalInfluencerInput) {
   await requireProfile();
   const data = externalInfluencerSchema.parse(input);
@@ -18,7 +24,9 @@ export async function createInfluencer(input: ExternalInfluencerInput) {
     .insert(data)
     .select("id")
     .single();
-  if (error) throw new Error(error.message);
+  if (error) {
+    return { error: error.code === "23505" ? DUPLICATE_HANDLE_MSG : error.message };
+  }
   revalidatePath("/influencers");
   redirect(`/influencers/${created.id}`);
 }
@@ -33,7 +41,10 @@ export async function updateInfluencer(
     .from("external_influencers")
     .update(input)
     .eq("id", id);
-  if (error) throw new Error(error.message);
+  if (error) {
+    return { error: error.code === "23505" ? DUPLICATE_HANDLE_MSG : error.message };
+  }
   revalidatePath(`/influencers/${id}`);
   revalidatePath("/influencers");
+  return { ok: true as const };
 }

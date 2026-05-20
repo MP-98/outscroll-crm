@@ -12,9 +12,25 @@ import { StatusPill } from "@/components/status-pill";
 import { InfluencerForm } from "@/components/forms/influencer-form";
 import { SyncIgButton } from "./sync-button";
 import { formatCompact, formatINR } from "@/lib/currency";
-import { fmtRelative } from "@/lib/date";
+import { fmtRelative, fmtDate } from "@/lib/date";
 import { igUrl, normalizeIgHandle } from "@/lib/ig";
 import { initials } from "@/lib/utils";
+
+const FORMAT_MIX_LABEL: Record<string, string> = {
+  reel_heavy: "Reel-heavy",
+  photo_heavy: "Photo-heavy",
+  mixed: "Mixed",
+};
+const PRODUCTION_LABEL: Record<string, string> = {
+  high: "High (DSLR/agency)",
+  mid: "Mid (good phone)",
+  low: "Low (raw phone)",
+};
+const ANALYSIS_LABEL: Record<string, string> = {
+  not_analyzed: "Not analyzed",
+  tier_1: "Tier 1",
+  tier_2: "Tier 2",
+};
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -123,7 +139,7 @@ export default async function InfluencerDetailPage({ params }: Props) {
           </TabsList>
 
           <TabsContent value="overview">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 max-w-3xl">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 max-w-4xl">
               <Card>
                 <CardHeader>
                   <CardTitle className="text-sm">Contact</CardTitle>
@@ -162,6 +178,127 @@ export default async function InfluencerDetailPage({ params }: Props) {
                   <Row label="Post" value={formatINR(influencer.rate_post)} />
                 </CardContent>
               </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">Content profile</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-1.5 text-sm">
+                  <Row label="POV" value={influencer.content_pov ?? "—"} />
+                  <Row
+                    label="Format mix"
+                    value={FORMAT_MIX_LABEL[influencer.format_mix ?? ""] ?? "—"}
+                  />
+                  <Row
+                    label="Production"
+                    value={PRODUCTION_LABEL[influencer.production_quality ?? ""] ?? "—"}
+                  />
+                  <Row
+                    label="Audience age"
+                    value={influencer.audience_age_band_est ?? "—"}
+                  />
+                  <Row
+                    label="Languages"
+                    value={(influencer.languages ?? []).join(", ") || "—"}
+                  />
+                  <div className="flex justify-between gap-3">
+                    <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                      Tone
+                    </span>
+                    <span className="flex flex-wrap gap-1 justify-end">
+                      {(influencer.tone_tags ?? []).length > 0 ? (
+                        (influencer.tone_tags ?? []).map((t: string) => (
+                          <Badge key={t} variant="outline" className="text-[10px] capitalize">
+                            {t}
+                          </Badge>
+                        ))
+                      ) : (
+                        <span className="text-sm">—</span>
+                      )}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">Analysis</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-1.5 text-sm">
+                  <div className="flex justify-between gap-3">
+                    <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                      Depth
+                    </span>
+                    <Badge
+                      variant={
+                        influencer.analysis_depth === "tier_2"
+                          ? "success"
+                          : influencer.analysis_depth === "tier_1"
+                            ? "primary"
+                            : "outline"
+                      }
+                    >
+                      {ANALYSIS_LABEL[influencer.analysis_depth ?? "not_analyzed"]}
+                    </Badge>
+                  </div>
+                  <Row
+                    label="Last analyzed"
+                    value={
+                      influencer.last_analyzed_at
+                        ? fmtDate(influencer.last_analyzed_at)
+                        : "—"
+                    }
+                  />
+                  <Row label="Analyzed by" value={influencer.analyzed_by ?? "—"} />
+                  <Row
+                    label="Events"
+                    value={influencer.events_other ?? "—"}
+                  />
+                </CardContent>
+              </Card>
+
+              {influencer.casting_notes ? (
+                <Card className="lg:col-span-2">
+                  <CardHeader>
+                    <CardTitle className="text-sm">Casting notes</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm whitespace-pre-wrap">
+                      {influencer.casting_notes}
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : null}
+
+              {influencer.brand_collabs_visible || influencer.red_flags ? (
+                <Card className="lg:col-span-2">
+                  <CardHeader>
+                    <CardTitle className="text-sm">Collabs & flags</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2 text-sm">
+                    {influencer.brand_collabs_visible ? (
+                      <div>
+                        <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                          Brand collabs visible
+                        </div>
+                        <p className="whitespace-pre-wrap">
+                          {influencer.brand_collabs_visible}
+                        </p>
+                      </div>
+                    ) : null}
+                    {influencer.red_flags ? (
+                      <div>
+                        <div className="text-xs uppercase tracking-wide text-destructive">
+                          Red flags
+                        </div>
+                        <p className="whitespace-pre-wrap text-destructive/90">
+                          {influencer.red_flags}
+                        </p>
+                      </div>
+                    ) : null}
+                  </CardContent>
+                </Card>
+              ) : null}
             </div>
           </TabsContent>
 
@@ -243,6 +380,19 @@ export default async function InfluencerDetailPage({ params }: Props) {
                 rate_post: influencer.rate_post,
                 notes: influencer.notes,
                 tags: influencer.tags ?? [],
+                content_pov: influencer.content_pov,
+                format_mix: influencer.format_mix,
+                languages: influencer.languages ?? [],
+                tone_tags: influencer.tone_tags ?? [],
+                production_quality: influencer.production_quality,
+                audience_age_band_est: influencer.audience_age_band_est,
+                brand_collabs_visible: influencer.brand_collabs_visible,
+                red_flags: influencer.red_flags,
+                casting_notes: influencer.casting_notes,
+                events_other: influencer.events_other,
+                analysis_depth: influencer.analysis_depth ?? "not_analyzed",
+                last_analyzed_at: influencer.last_analyzed_at,
+                analyzed_by: influencer.analyzed_by,
               }}
             />
           </TabsContent>

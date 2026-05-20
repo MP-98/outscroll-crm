@@ -164,6 +164,20 @@ export interface ManagedBrand {
   updated_at: string;
 }
 
+export type FormatMix = "reel_heavy" | "photo_heavy" | "mixed";
+export type ProductionQuality = "high" | "mid" | "low";
+export type AudienceAgeBand = "18-24" | "25-34" | "35-44" | "mixed";
+export type AnalysisDepth = "not_analyzed" | "tier_1" | "tier_2";
+export type ToneTag =
+  | "motivational"
+  | "educational"
+  | "aspirational"
+  | "warm"
+  | "funny"
+  | "raw"
+  | "premium"
+  | "technical";
+
 export interface ExternalInfluencer {
   id: string;
   full_name: string | null;
@@ -180,6 +194,20 @@ export interface ExternalInfluencer {
   rate_post: number | null;
   notes: string | null;
   tags: string[];
+  // v5 creator-analysis fields
+  content_pov: string | null;
+  format_mix: FormatMix | null;
+  languages: string[];
+  tone_tags: string[];
+  production_quality: ProductionQuality | null;
+  audience_age_band_est: AudienceAgeBand | null;
+  brand_collabs_visible: string | null;
+  red_flags: string | null;
+  casting_notes: string | null;
+  events_other: string | null;
+  analysis_depth: AnalysisDepth | null;
+  last_analyzed_at: string | null;
+  analyzed_by: string | null;
   created_at: string;
 }
 

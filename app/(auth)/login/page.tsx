@@ -5,7 +5,7 @@ export const metadata = { title: "Sign in · Outscroll CRM" };
 
 export default function LoginPage() {
   return (
-    <div className="min-h-svh flex items-center justify-center px-6 py-12 bg-muted/30">
+    <div className="h-full overflow-y-auto flex items-center justify-center px-6 py-12 bg-muted/30">
       <div className="w-full max-w-sm space-y-8">
         <div className="space-y-2 text-center">
           <div className="mx-auto h-9 w-9 rounded-md bg-primary text-primary-foreground grid place-items-center font-semibold">

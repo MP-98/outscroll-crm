@@ -10,17 +10,28 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { TagInput } from "@/components/tag-input";
 import {
   externalInfluencerSchema,
+  TONE_TAGS,
   type ExternalInfluencerInput,
 } from "@/lib/validations/external-influencer";
 import {
   createInfluencer,
   updateInfluencer,
 } from "@/server/actions/influencers";
+import { cn } from "@/lib/utils";
 
 type FormValues = z.input<typeof externalInfluencerSchema>;
+
+const TONE_TAG_SET = TONE_TAGS as readonly string[];
 
 interface Props {
   influencerId?: string;
@@ -47,20 +58,44 @@ export function InfluencerForm({ influencerId, initial, niches, onDone }: Props)
       rate_post: null,
       notes: null,
       tags: [],
+      content_pov: null,
+      format_mix: null,
+      languages: [],
+      tone_tags: [],
+      production_quality: null,
+      audience_age_band_est: null,
+      brand_collabs_visible: null,
+      red_flags: null,
+      casting_notes: null,
+      events_other: null,
+      analysis_depth: "not_analyzed",
+      last_analyzed_at: null,
+      analyzed_by: null,
       ...initial,
     } as FormValues,
   });
+
+  const toneTags = (form.watch("tone_tags") ?? []) as string[];
+  function toggleTone(tag: string) {
+    const next = toneTags.includes(tag)
+      ? toneTags.filter((t) => t !== tag)
+      : [...toneTags, tag];
+    form.setValue("tone_tags", next as FormValues["tone_tags"]);
+  }
 
   function onSubmit(data: FormValues) {
     start(async () => {
       try {
         const parsed = externalInfluencerSchema.parse(data) as ExternalInfluencerInput;
-        if (influencerId) {
-          await updateInfluencer(influencerId, parsed);
-          toast.success("Influencer updated");
-        } else {
-          await createInfluencer(parsed);
+        const result = influencerId
+          ? await updateInfluencer(influencerId, parsed)
+          : await createInfluencer(parsed);
+        // On create success the action redirects (never returns here).
+        if (result && "error" in result && result.error) {
+          toast.error(result.error);
+          return;
         }
+        if (influencerId) toast.success("Influencer updated");
         onDone?.();
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Save failed");
@@ -157,6 +192,205 @@ export function InfluencerForm({ influencerId, initial, niches, onDone }: Props)
               id="rate_post"
               type="number"
               {...form.register("rate_post", { valueAsNumber: true })}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Content profile */}
+      <div className="space-y-3 pt-1">
+        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Content profile
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="content_pov">Content POV</Label>
+          <Input
+            id="content_pov"
+            placeholder="e.g. budget fashion hauls for college students"
+            {...form.register("content_pov")}
+          />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="space-y-1.5">
+            <Label>Format mix</Label>
+            <Select
+              value={(form.watch("format_mix") as string | null) ?? "none"}
+              onValueChange={(v) =>
+                form.setValue("format_mix", (v === "none" ? null : v) as FormValues["format_mix"])
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="—" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">—</SelectItem>
+                <SelectItem value="reel_heavy">Reel-heavy</SelectItem>
+                <SelectItem value="photo_heavy">Photo-heavy</SelectItem>
+                <SelectItem value="mixed">Mixed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Production quality</Label>
+            <Select
+              value={(form.watch("production_quality") as string | null) ?? "none"}
+              onValueChange={(v) =>
+                form.setValue(
+                  "production_quality",
+                  (v === "none" ? null : v) as FormValues["production_quality"],
+                )
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="—" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">—</SelectItem>
+                <SelectItem value="high">High (DSLR / agency)</SelectItem>
+                <SelectItem value="mid">Mid (good phone)</SelectItem>
+                <SelectItem value="low">Low (raw phone)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Audience age band (est.)</Label>
+            <Select
+              value={(form.watch("audience_age_band_est") as string | null) ?? "none"}
+              onValueChange={(v) =>
+                form.setValue(
+                  "audience_age_band_est",
+                  (v === "none" ? null : v) as FormValues["audience_age_band_est"],
+                )
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="—" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">—</SelectItem>
+                <SelectItem value="18-24">18–24</SelectItem>
+                <SelectItem value="25-34">25–34</SelectItem>
+                <SelectItem value="35-44">35–44</SelectItem>
+                <SelectItem value="mixed">Mixed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          <Label>Languages</Label>
+          <TagInput
+            value={(form.watch("languages") ?? []) as string[]}
+            onChange={(v) => form.setValue("languages", v)}
+            placeholder="Add and press Enter…"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label>Tone tags</Label>
+          <div className="flex flex-wrap gap-1.5">
+            {TONE_TAG_SET.map((tag) => {
+              const on = toneTags.includes(tag);
+              return (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => toggleTone(tag)}
+                  className={cn(
+                    "inline-flex items-center rounded-md border px-2 py-0.5 text-xs capitalize transition-colors",
+                    on
+                      ? "border-primary/30 bg-primary/10 text-primary"
+                      : "border-border bg-background text-muted-foreground hover:bg-accent",
+                  )}
+                >
+                  {tag}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Collabs & flags */}
+      <div className="space-y-3 pt-1">
+        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Collabs & flags
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="brand_collabs_visible">Brand collabs visible</Label>
+          <Textarea
+            id="brand_collabs_visible"
+            rows={2}
+            placeholder="Comma-separated brands seen in recent content"
+            {...form.register("brand_collabs_visible")}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="red_flags">Red flags</Label>
+          <Textarea
+            id="red_flags"
+            rows={2}
+            placeholder="Fake engagement, controversy, dropping reach, audience mismatch…"
+            {...form.register("red_flags")}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="events_other">Event tags</Label>
+          <Input
+            id="events_other"
+            placeholder="e.g. Pinkathon, Mumbai Marathon, fashion weeks"
+            {...form.register("events_other")}
+          />
+        </div>
+      </div>
+
+      {/* Casting notes */}
+      <div className="space-y-1.5">
+        <Label htmlFor="casting_notes">Casting notes</Label>
+        <Textarea
+          id="casting_notes"
+          rows={5}
+          placeholder="Free-form analyst notes — the real signal for pitching. Who they're a fit for, hooks, caveats…"
+          {...form.register("casting_notes")}
+        />
+      </div>
+
+      {/* Analysis workflow */}
+      <div className="space-y-3 pt-1">
+        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Analysis workflow
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="space-y-1.5">
+            <Label>Analysis depth</Label>
+            <Select
+              value={form.watch("analysis_depth") ?? "not_analyzed"}
+              onValueChange={(v) =>
+                form.setValue("analysis_depth", v as FormValues["analysis_depth"])
+              }
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="not_analyzed">Not analyzed</SelectItem>
+                <SelectItem value="tier_1">Tier 1</SelectItem>
+                <SelectItem value="tier_2">Tier 2</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="last_analyzed_at">Last analyzed</Label>
+            <Input
+              id="last_analyzed_at"
+              type="date"
+              {...form.register("last_analyzed_at")}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="analyzed_by">Analyzed by</Label>
+            <Input
+              id="analyzed_by"
+              placeholder="You / intern name / AI"
+              {...form.register("analyzed_by")}
             />
           </div>
         </div>
