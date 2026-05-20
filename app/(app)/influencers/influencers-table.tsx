@@ -45,10 +45,16 @@ export function InfluencersTable({ rows, niches }: Props) {
   const [search, setSearch] = useState("");
   const [niche, setNiche] = useState<string>("all");
   const [city, setCity] = useState<string>("all");
+  const [tag, setTag] = useState<string>("all");
 
   const cities = useMemo(
     () =>
       Array.from(new Set(rows.map((r) => r.city).filter(Boolean) as string[])).sort(),
+    [rows],
+  );
+
+  const allTags = useMemo(
+    () => Array.from(new Set(rows.flatMap((r) => r.tags))).sort(),
     [rows],
   );
 
@@ -57,11 +63,14 @@ export function InfluencersTable({ rows, niches }: Props) {
     if (
       q &&
       !(r.full_name?.toLowerCase().includes(q) ?? false) &&
-      !r.ig_handle.toLowerCase().includes(q)
+      !r.ig_handle.toLowerCase().includes(q) &&
+      !r.tags.some((t) => t.toLowerCase().includes(q)) &&
+      !r.niches.some((n) => n.toLowerCase().includes(q))
     )
       return false;
     if (niche !== "all" && !r.niches.includes(niche)) return false;
     if (city !== "all" && r.city !== city) return false;
+    if (tag !== "all" && !r.tags.includes(tag)) return false;
     return true;
   });
 
@@ -159,7 +168,7 @@ export function InfluencersTable({ rows, niches }: Props) {
         <div className="relative flex-1 min-w-[12rem] max-w-xs">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <Input
-            placeholder="Search name or handle…"
+            placeholder="Search name, handle, niche or tag…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-8"
@@ -189,6 +198,25 @@ export function InfluencersTable({ rows, niches }: Props) {
                 {c}
               </SelectItem>
             ))}
+          </SelectContent>
+        </Select>
+        <Select value={tag} onValueChange={setTag}>
+          <SelectTrigger className="w-32">
+            <SelectValue placeholder="Tag" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All tags</SelectItem>
+            {allTags.length === 0 ? (
+              <SelectItem value="__none" disabled>
+                No tags yet
+              </SelectItem>
+            ) : (
+              allTags.map((t) => (
+                <SelectItem key={t} value={t}>
+                  {t}
+                </SelectItem>
+              ))
+            )}
           </SelectContent>
         </Select>
         <span className="ml-auto text-xs text-muted-foreground tabular-nums">
