@@ -189,9 +189,14 @@ export interface ExternalInfluencer {
   city: string | null;
   contact_email: string | null;
   contact_phone: string | null;
-  rate_reel: number | null;
-  rate_story: number | null;
-  rate_post: number | null;
+  // v6: rates are free-form text ("20k", "2.5k–3k", etc.).
+  rate_reel: string | null;
+  rate_story: string | null;
+  rate_post: string | null;
+  rate_reel_non_collab: string | null;
+  ad_rights: string | null;
+  is_managed: boolean | null;
+  managed_by: string | null;
   notes: string | null;
   tags: string[];
   // v5 creator-analysis fields

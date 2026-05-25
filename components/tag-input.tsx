@@ -22,15 +22,26 @@ export function TagInput({
   className,
 }: TagInputProps) {
   const [input, setInput] = useState("");
+
+  // Case-insensitive dedup of suggestions against the current value so
+  // "Fashion" and "fashion" don't both appear if one is already picked.
+  const lowerValue = value.map((v) => v.toLowerCase());
   const filtered = suggestions
-    .filter((s) => !value.includes(s))
+    .filter((s) => !lowerValue.includes(s.toLowerCase()))
     .filter((s) => s.toLowerCase().includes(input.toLowerCase()))
     .slice(0, 6);
 
   function add(tag: string) {
     const t = tag.trim();
     if (!t) return;
-    if (!value.includes(t)) onChange([...value, t]);
+    // Skip if any existing value matches case-insensitively.
+    if (value.some((v) => v.toLowerCase() === t.toLowerCase())) {
+      setInput("");
+      return;
+    }
+    // If a suggestion exists with different casing, reuse the canonical casing.
+    const canonical = suggestions.find((s) => s.toLowerCase() === t.toLowerCase());
+    onChange([...value, canonical ?? t]);
     setInput("");
   }
 
@@ -41,9 +52,12 @@ export function TagInput({
   function onKey(e: KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Enter" || e.key === ",") {
       e.preventDefault();
-      if (input.trim() && (allowCreate || suggestions.includes(input.trim()))) {
-        add(input);
-      }
+      const t = input.trim();
+      if (!t) return;
+      const inSuggestions = suggestions.some(
+        (s) => s.toLowerCase() === t.toLowerCase(),
+      );
+      if (allowCreate || inSuggestions) add(input);
     } else if (e.key === "Backspace" && !input && value.length > 0) {
       remove(value[value.length - 1]);
     }
@@ -89,15 +103,23 @@ export function TagInput({
               {s}
             </button>
           ))}
-          {allowCreate && !suggestions.includes(input.trim()) && input.trim() ? (
-            <button
-              type="button"
-              onClick={() => add(input)}
-              className="block w-full text-left rounded px-2 py-1 hover:bg-accent text-primary"
-            >
-              + Create &ldquo;{input.trim()}&rdquo;
-            </button>
-          ) : null}
+          {(() => {
+            const trimmed = input.trim();
+            if (!allowCreate || !trimmed) return null;
+            const existsAnywhere =
+              suggestions.some((s) => s.toLowerCase() === trimmed.toLowerCase()) ||
+              value.some((v) => v.toLowerCase() === trimmed.toLowerCase());
+            if (existsAnywhere) return null;
+            return (
+              <button
+                type="button"
+                onClick={() => add(input)}
+                className="block w-full text-left rounded px-2 py-1 hover:bg-accent text-primary"
+              >
+                + Create &ldquo;{trimmed}&rdquo;
+              </button>
+            );
+          })()}
         </div>
       ) : null}
     </div>

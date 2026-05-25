@@ -244,9 +244,14 @@ create table if not exists external_influencers (
   city text,
   contact_email text,
   contact_phone text,
-  rate_reel integer,
-  rate_story integer,
-  rate_post integer,
+  -- v6: rate columns are text so "20k" / "2.5k–3k" values work.
+  rate_reel text,
+  rate_story text,
+  rate_post text,
+  rate_reel_non_collab text,
+  ad_rights text,
+  is_managed boolean,
+  managed_by text,
   notes text,
   tags text[] default '{}',
   -- v5 creator-analysis fields (see db/v5-influencer-fields.sql)
@@ -281,6 +286,11 @@ alter table external_influencers add column if not exists events_other text;
 alter table external_influencers add column if not exists analysis_depth text default 'not_analyzed';
 alter table external_influencers add column if not exists last_analyzed_at date;
 alter table external_influencers add column if not exists analyzed_by text;
+-- v6 (see db/v6-rates-and-management.sql for the int→text conversion).
+alter table external_influencers add column if not exists rate_reel_non_collab text;
+alter table external_influencers add column if not exists ad_rights text;
+alter table external_influencers add column if not exists is_managed boolean;
+alter table external_influencers add column if not exists managed_by text;
 
 create table if not exists campaigns (
   id uuid primary key default gen_random_uuid(),

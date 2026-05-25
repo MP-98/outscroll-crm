@@ -41,21 +41,35 @@ export default async function InfluencerDetailPage({ params }: Props) {
   await requireProfile();
   const supabase = await createClient();
 
-  const [{ data: influencer }, { data: outreaches }, { data: niches }] =
-    await Promise.all([
-      supabase.from("external_influencers").select("*").eq("id", id).single(),
-      supabase
-        .from("campaign_outreaches")
-        .select(
-          `id, status, updated_at, payment_status, agreed_amount,
-           campaign:campaigns(id, name, managed_brand:managed_brands(id, name))`,
-        )
-        .eq("external_influencer_id", id)
-        .order("updated_at", { ascending: false }),
-      supabase.from("niches").select("name").order("name"),
-    ]);
+  const [
+    { data: influencer },
+    { data: outreaches },
+    { data: niches },
+    { data: tagRows },
+  ] = await Promise.all([
+    supabase.from("external_influencers").select("*").eq("id", id).single(),
+    supabase
+      .from("campaign_outreaches")
+      .select(
+        `id, status, updated_at, payment_status, agreed_amount,
+         campaign:campaigns(id, name, managed_brand:managed_brands(id, name))`,
+      )
+      .eq("external_influencer_id", id)
+      .order("updated_at", { ascending: false }),
+    supabase.from("niches").select("name").order("name"),
+    supabase.from("external_influencers").select("tags").not("tags", "is", null),
+  ]);
 
   if (!influencer) notFound();
+
+  const tagSeen = new Map<string, string>();
+  for (const row of tagRows ?? []) {
+    for (const t of (row.tags as string[] | null) ?? []) {
+      const key = t.toLowerCase();
+      if (!tagSeen.has(key)) tagSeen.set(key, t);
+    }
+  }
+  const existingTags = Array.from(tagSeen.values()).sort();
 
   return (
     <>
@@ -170,12 +184,48 @@ export default async function InfluencerDetailPage({ params }: Props) {
               </Card>
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-sm">Rate card (₹)</CardTitle>
+                  <CardTitle className="text-sm">Rate card</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-1.5 text-sm">
-                  <Row label="Reel" value={formatINR(influencer.rate_reel)} />
-                  <Row label="Story" value={formatINR(influencer.rate_story)} />
-                  <Row label="Post" value={formatINR(influencer.rate_post)} />
+                  <Row label="Reel (collab)" value={influencer.rate_reel ?? "—"} />
+                  <Row
+                    label="Reel (non-collab)"
+                    value={influencer.rate_reel_non_collab ?? "—"}
+                  />
+                  <Row label="Story" value={influencer.rate_story ?? "—"} />
+                  <Row label="Post" value={influencer.rate_post ?? "—"} />
+                  <Row label="Ad rights" value={influencer.ad_rights ?? "—"} />
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">Management</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-1.5 text-sm">
+                  <div className="flex justify-between gap-3">
+                    <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                      Managed by someone?
+                    </span>
+                    <Badge
+                      variant={
+                        influencer.is_managed === true
+                          ? "primary"
+                          : influencer.is_managed === false
+                            ? "outline"
+                            : "default"
+                      }
+                    >
+                      {influencer.is_managed === true
+                        ? "Yes"
+                        : influencer.is_managed === false
+                          ? "No"
+                          : "Unknown"}
+                    </Badge>
+                  </div>
+                  {influencer.is_managed === true ? (
+                    <Row label="Managed by" value={influencer.managed_by ?? "—"} />
+                  ) : null}
                 </CardContent>
               </Card>
 
@@ -366,6 +416,7 @@ export default async function InfluencerDetailPage({ params }: Props) {
             <InfluencerForm
               influencerId={influencer.id}
               niches={(niches ?? []).map((n) => n.name)}
+              existingTags={existingTags}
               initial={{
                 full_name: influencer.full_name,
                 ig_handle: influencer.ig_handle,
@@ -378,6 +429,10 @@ export default async function InfluencerDetailPage({ params }: Props) {
                 rate_reel: influencer.rate_reel,
                 rate_story: influencer.rate_story,
                 rate_post: influencer.rate_post,
+                rate_reel_non_collab: influencer.rate_reel_non_collab,
+                ad_rights: influencer.ad_rights,
+                is_managed: influencer.is_managed,
+                managed_by: influencer.managed_by,
                 notes: influencer.notes,
                 tags: influencer.tags ?? [],
                 content_pov: influencer.content_pov,

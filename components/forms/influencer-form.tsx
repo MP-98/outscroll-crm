@@ -37,10 +37,18 @@ interface Props {
   influencerId?: string;
   initial?: Partial<FormValues>;
   niches: string[];
+  /** All tags currently in use across the influencer pool — used to autocomplete the Tags input. */
+  existingTags?: string[];
   onDone?: () => void;
 }
 
-export function InfluencerForm({ influencerId, initial, niches, onDone }: Props) {
+export function InfluencerForm({
+  influencerId,
+  initial,
+  niches,
+  existingTags = [],
+  onDone,
+}: Props) {
   const [pending, start] = useTransition();
   const form = useForm<FormValues>({
     resolver: zodResolver(externalInfluencerSchema) as never,
@@ -56,6 +64,10 @@ export function InfluencerForm({ influencerId, initial, niches, onDone }: Props)
       rate_reel: null,
       rate_story: null,
       rate_post: null,
+      rate_reel_non_collab: null,
+      ad_rights: null,
+      is_managed: null,
+      managed_by: null,
       notes: null,
       tags: [],
       content_pov: null,
@@ -167,31 +179,95 @@ export function InfluencerForm({ influencerId, initial, niches, onDone }: Props)
 
       <div className="space-y-3 pt-1">
         <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Rate card (₹)
+          Rate card
         </div>
-        <div className="grid grid-cols-3 gap-3">
+        <p className="text-[11px] text-muted-foreground -mt-1">
+          Free-form text — write whatever feels right (&ldquo;20k&rdquo;, &ldquo;₹2.5k&rdquo;, &ldquo;2k–3k&rdquo;).
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="space-y-1.5">
-            <Label htmlFor="rate_reel">Reel</Label>
+            <Label htmlFor="rate_reel">Reel (collab)</Label>
             <Input
               id="rate_reel"
-              type="number"
-              {...form.register("rate_reel", { valueAsNumber: true })}
+              placeholder="e.g. 20k"
+              {...form.register("rate_reel")}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="rate_reel_non_collab">Reel (non-collab)</Label>
+            <Input
+              id="rate_reel_non_collab"
+              placeholder="e.g. 35k"
+              {...form.register("rate_reel_non_collab")}
             />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="rate_story">Story</Label>
             <Input
               id="rate_story"
-              type="number"
-              {...form.register("rate_story", { valueAsNumber: true })}
+              placeholder="e.g. 5k"
+              {...form.register("rate_story")}
             />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="rate_post">Post</Label>
             <Input
               id="rate_post"
-              type="number"
-              {...form.register("rate_post", { valueAsNumber: true })}
+              placeholder="e.g. 10k"
+              {...form.register("rate_post")}
+            />
+          </div>
+          <div className="space-y-1.5 sm:col-span-2">
+            <Label htmlFor="ad_rights">Ad rights</Label>
+            <Input
+              id="ad_rights"
+              placeholder="e.g. 30 days organic + 7 days paid, +20% for usage"
+              {...form.register("ad_rights")}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Management */}
+      <div className="space-y-3 pt-1">
+        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Management
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label>Are they being managed by someone?</Label>
+            <Select
+              value={
+                form.watch("is_managed") === true
+                  ? "yes"
+                  : form.watch("is_managed") === false
+                    ? "no"
+                    : "unknown"
+              }
+              onValueChange={(v) =>
+                form.setValue(
+                  "is_managed",
+                  v === "yes" ? true : v === "no" ? false : null,
+                )
+              }
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="unknown">Unknown</SelectItem>
+                <SelectItem value="yes">Yes</SelectItem>
+                <SelectItem value="no">No</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="managed_by">Managed by</Label>
+            <Input
+              id="managed_by"
+              placeholder="Agency / manager name (if known)"
+              {...form.register("managed_by")}
+              disabled={form.watch("is_managed") === false}
             />
           </div>
         </div>
@@ -405,6 +481,8 @@ export function InfluencerForm({ influencerId, initial, niches, onDone }: Props)
         <TagInput
           value={form.watch("tags") ?? []}
           onChange={(v) => form.setValue("tags", v)}
+          suggestions={existingTags}
+          placeholder="Pick or create…"
         />
       </div>
 

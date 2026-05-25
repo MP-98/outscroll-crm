@@ -53,10 +53,19 @@ export function InfluencersTable({ rows, niches }: Props) {
     [rows],
   );
 
-  const allTags = useMemo(
-    () => Array.from(new Set(rows.flatMap((r) => r.tags))).sort(),
-    [rows],
-  );
+  // Case-insensitive dedup of tags across rows. First-seen casing wins.
+  const allTags = useMemo(() => {
+    const seen = new Map<string, string>();
+    for (const r of rows) {
+      for (const t of r.tags) {
+        const key = t.toLowerCase();
+        if (!seen.has(key)) seen.set(key, t);
+      }
+    }
+    return Array.from(seen.values()).sort((a, b) =>
+      a.toLowerCase().localeCompare(b.toLowerCase()),
+    );
+  }, [rows]);
 
   const filtered = rows.filter((r) => {
     const q = search.trim().toLowerCase();
@@ -70,7 +79,12 @@ export function InfluencersTable({ rows, niches }: Props) {
       return false;
     if (niche !== "all" && !r.niches.includes(niche)) return false;
     if (city !== "all" && r.city !== city) return false;
-    if (tag !== "all" && !r.tags.includes(tag)) return false;
+    // Case-insensitive: filtering by "Fashion" matches rows tagged "fashion".
+    if (
+      tag !== "all" &&
+      !r.tags.some((t) => t.toLowerCase() === tag.toLowerCase())
+    )
+      return false;
     return true;
   });
 

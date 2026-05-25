@@ -46,9 +46,22 @@ export const externalInfluencerSchema = z.object({
   city: optionalStringSchema.nullable().default(null),
   contact_email: optionalStringSchema.nullable().default(null),
   contact_phone: optionalStringSchema.nullable().default(null),
-  rate_reel: optionalIntSchema.nullable().default(null),
-  rate_story: optionalIntSchema.nullable().default(null),
-  rate_post: optionalIntSchema.nullable().default(null),
+  // v6: rates are free-form text. "20k", "2.5k–3k", etc.
+  rate_reel: optionalStringSchema.nullable().default(null),
+  rate_story: optionalStringSchema.nullable().default(null),
+  rate_post: optionalStringSchema.nullable().default(null),
+  rate_reel_non_collab: optionalStringSchema.nullable().default(null),
+  ad_rights: optionalStringSchema.nullable().default(null),
+  is_managed: z.preprocess(
+    (v) => {
+      if (v === "" || v == null) return null;
+      if (v === "true" || v === true) return true;
+      if (v === "false" || v === false) return false;
+      return v;
+    },
+    z.union([z.boolean(), z.null()]),
+  ),
+  managed_by: optionalStringSchema.nullable().default(null),
   notes: optionalStringSchema.nullable().default(null),
   tags: tagsSchema,
 
