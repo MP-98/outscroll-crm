@@ -23,11 +23,11 @@ export interface PoolInfluencer {
   id: string;
   full_name: string | null;
   ig_handle: string;
-  ig_followers: number | null;
-  avg_reel_views: number | null;
+  ig_followers: string | null;
+  avg_reel_views: string | null;
   niches: string[];
   city: string | null;
-  rate_reel: number | null;
+  rate_reel: string | null;
 }
 
 export interface PoolTalent {
@@ -187,11 +187,12 @@ export function AddInfluencersDialog({
                   id: t.id,
                   name: t.full_name,
                   handle: t.ig_handle,
-                  followers: t.ig_followers,
-                  avgReels: t.avg_reel_views,
+                  // Talents keep numeric metrics — format for display here.
+                  followers: t.ig_followers != null ? formatCompact(t.ig_followers) : null,
+                  avgReels: t.avg_reel_views != null ? formatCompact(t.avg_reel_views) : null,
                   niches: t.niches,
                   city: t.city,
-                  rateReel: t.rate_reel,
+                  rateReel: t.rate_reel != null ? formatINR(t.rate_reel) : null,
                 }))}
                 isPicked={(id) => isPicked("talent", id)}
                 onToggle={(id) => toggle("talent", id)}
@@ -226,11 +227,12 @@ interface PoolRow {
   id: string;
   name: string;
   handle: string;
-  followers: number | null;
-  avgReels: number | null;
+  /** Pre-formatted display strings (externals are free-text, talents formatted). */
+  followers: string | null;
+  avgReels: string | null;
   niches: string[];
   city: string | null;
-  rateReel: number | null;
+  rateReel: string | null;
 }
 
 function PoolList({
@@ -285,16 +287,10 @@ function PoolList({
                     </span>
                   </div>
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-muted-foreground mt-0.5">
-                    {r.followers != null ? (
-                      <span>{formatCompact(r.followers)} followers</span>
-                    ) : null}
-                    {r.avgReels != null ? (
-                      <span>{formatCompact(r.avgReels)} avg reels</span>
-                    ) : null}
+                    {r.followers ? <span>{r.followers} followers</span> : null}
+                    {r.avgReels ? <span>{r.avgReels} avg reels</span> : null}
                     {r.city ? <span>{r.city}</span> : null}
-                    {r.rateReel != null ? (
-                      <span>reel {formatINR(r.rateReel)}</span>
-                    ) : null}
+                    {r.rateReel ? <span>reel {r.rateReel}</span> : null}
                   </div>
                 </div>
                 <div className="hidden sm:flex flex-wrap gap-1 max-w-[10rem] justify-end">

@@ -237,8 +237,9 @@ create table if not exists external_influencers (
   id uuid primary key default gen_random_uuid(),
   full_name text,
   ig_handle text not null unique,
-  ig_followers integer,
-  avg_reel_views integer,
+  -- v7: text so "1.6K" / "1.2L" work (Apify sync writes the numeric string).
+  ig_followers text,
+  avg_reel_views text,
   ig_metrics_synced_at timestamptz,
   niches text[] default '{}',
   city text,
@@ -291,6 +292,24 @@ alter table external_influencers add column if not exists rate_reel_non_collab t
 alter table external_influencers add column if not exists ad_rights text;
 alter table external_influencers add column if not exists is_managed boolean;
 alter table external_influencers add column if not exists managed_by text;
+-- v7: ig_followers / avg_reel_views int→text (see db/v7-text-metrics.sql).
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'external_influencers'
+      and column_name = 'ig_followers' and data_type = 'integer'
+  ) then
+    alter table external_influencers alter column ig_followers type text using ig_followers::text;
+  end if;
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'external_influencers'
+      and column_name = 'avg_reel_views' and data_type = 'integer'
+  ) then
+    alter table external_influencers alter column avg_reel_views type text using avg_reel_views::text;
+  end if;
+end $$;
 
 create table if not exists campaigns (
   id uuid primary key default gen_random_uuid(),

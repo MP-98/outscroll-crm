@@ -182,8 +182,9 @@ export interface ExternalInfluencer {
   id: string;
   full_name: string | null;
   ig_handle: string;
-  ig_followers: number | null;
-  avg_reel_views: number | null;
+  // v7: free-form text ("1.6K", "1.2L", or a raw number string from sync).
+  ig_followers: string | null;
+  avg_reel_views: string | null;
   ig_metrics_synced_at: string | null;
   niches: string[];
   city: string | null;

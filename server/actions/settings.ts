@@ -5,6 +5,58 @@ import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { requireProfile, requireRole } from "@/lib/auth";
 import type { UserRole } from "@/lib/supabase/types";
 
+const TAGGED_TABLES = [
+  "talents",
+  "brands",
+  "outreaches",
+  "external_influencers",
+] as const;
+
+/** Rename a tag everywhere it appears, merging all case variants into the new
+ *  spelling. e.g. rename "fashion" → "Fashion" also sweeps "FASHION".
+ *  Returns { error } on failure so the client can show a real toast. */
+export async function renameTag(oldTag: string, newTag: string) {
+  await requireProfile();
+  const from = oldTag.trim();
+  const to = newTag.trim();
+  if (!from || !to) return { error: "Both the current and new tag are required." };
+  const lowerFrom = from.toLowerCase();
+  const supabase = await createClient();
+
+  let updated = 0;
+  for (const table of TAGGED_TABLES) {
+    const { data, error } = await supabase.from(table).select("id, tags");
+    if (error) return { error: error.message };
+    for (const row of (data ?? []) as Array<{ id: string; tags: string[] | null }>) {
+      const tags = row.tags ?? [];
+      if (!tags.some((t) => t.toLowerCase() === lowerFrom)) continue;
+      // Replace every case-variant of the old tag, deduping case-insensitively.
+      const seen = new Set<string>();
+      const next: string[] = [];
+      for (const t of tags) {
+        const replaced = t.toLowerCase() === lowerFrom ? to : t;
+        const key = replaced.toLowerCase();
+        if (!seen.has(key)) {
+          seen.add(key);
+          next.push(replaced);
+        }
+      }
+      const { error: upErr } = await supabase
+        .from(table)
+        .update({ tags: next })
+        .eq("id", row.id);
+      if (upErr) return { error: upErr.message };
+      updated += 1;
+    }
+  }
+
+  revalidatePath("/settings/tags");
+  revalidatePath("/influencers");
+  revalidatePath("/talents");
+  revalidatePath("/outreaches");
+  return { ok: true as const, updated };
+}
+
 export async function createNiche(name: string) {
   await requireProfile();
   const trimmed = name.trim();

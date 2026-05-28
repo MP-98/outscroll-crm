@@ -11,7 +11,7 @@ import { Breadcrumbs } from "@/components/breadcrumbs";
 import { StatusPill } from "@/components/status-pill";
 import { InfluencerForm } from "@/components/forms/influencer-form";
 import { SyncIgButton } from "./sync-button";
-import { formatCompact, formatINR } from "@/lib/currency";
+import { formatINR } from "@/lib/currency";
 import { fmtRelative, fmtDate } from "@/lib/date";
 import { igUrl, normalizeIgHandle } from "@/lib/ig";
 import { initials } from "@/lib/utils";
@@ -104,13 +104,13 @@ export default async function InfluencerDetailPage({ params }: Props) {
             <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
               <span className="inline-flex items-center gap-1.5">
                 <span className="font-medium text-foreground tabular-nums">
-                  {formatCompact(influencer.ig_followers)}
+                  {influencer.ig_followers || "—"}
                 </span>
                 followers
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <span className="font-medium text-foreground tabular-nums">
-                  {formatCompact(influencer.avg_reel_views)}
+                  {influencer.avg_reel_views || "—"}
                 </span>
                 avg reels
               </span>

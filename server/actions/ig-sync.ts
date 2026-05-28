@@ -73,8 +73,16 @@ async function syncFromInstagram(
     const updates: Record<string, unknown> = {
       ig_metrics_synced_at: new Date().toISOString(),
     };
-    if (result.followers != null) updates.ig_followers = result.followers;
-    if (result.avg_reel_views != null) updates.avg_reel_views = result.avg_reel_views;
+    // external_influencers store these as text (v7); talents keep integers.
+    const asText = kind === "external_influencer";
+    if (result.followers != null) {
+      updates.ig_followers = asText ? String(result.followers) : result.followers;
+    }
+    if (result.avg_reel_views != null) {
+      updates.avg_reel_views = asText
+        ? String(result.avg_reel_views)
+        : result.avg_reel_views;
+    }
     if (Object.keys(updates).length > 1) {
       const { error: upErr } = await supabase.from(table).update(updates).eq("id", target.id);
       if (upErr) throw new Error(upErr.message);

@@ -33,6 +33,8 @@ type FormValues = z.input<typeof externalInfluencerSchema>;
 
 const TONE_TAG_SET = TONE_TAGS as readonly string[];
 
+const COMMON_LANGUAGES = ["Hindi", "English"];
+
 interface Props {
   influencerId?: string;
   initial?: Partial<FormValues>;
@@ -138,16 +140,16 @@ export function InfluencerForm({
           <Label htmlFor="ig_followers">Followers</Label>
           <Input
             id="ig_followers"
-            type="number"
-            {...form.register("ig_followers", { valueAsNumber: true })}
+            placeholder="e.g. 12K, 1.2L"
+            {...form.register("ig_followers")}
           />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="avg_reel_views">Avg reel views</Label>
           <Input
             id="avg_reel_views"
-            type="number"
-            {...form.register("avg_reel_views", { valueAsNumber: true })}
+            placeholder="e.g. 3K"
+            {...form.register("avg_reel_views")}
           />
         </div>
         <div className="space-y-1.5 sm:col-span-2">
@@ -357,7 +359,8 @@ export function InfluencerForm({
           <TagInput
             value={(form.watch("languages") ?? []) as string[]}
             onChange={(v) => form.setValue("languages", v)}
-            placeholder="Add and press Enter…"
+            suggestions={COMMON_LANGUAGES}
+            placeholder="Pick or create…"
           />
         </div>
         <div className="space-y-1.5">

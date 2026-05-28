@@ -2,7 +2,6 @@ import { z } from "zod";
 import { normalizeIgHandle } from "@/lib/ig";
 import {
   optionalDateSchema,
-  optionalIntSchema,
   optionalStringSchema,
   tagsSchema,
 } from "./common";
@@ -40,8 +39,8 @@ export const externalInfluencerSchema = z.object({
     .min(1, "Required")
     .transform((v) => normalizeIgHandle(v))
     .refine((v) => v.length > 0, "Required"),
-  ig_followers: optionalIntSchema.nullable().default(null),
-  avg_reel_views: optionalIntSchema.nullable().default(null),
+  ig_followers: optionalStringSchema.nullable().default(null),
+  avg_reel_views: optionalStringSchema.nullable().default(null),
   niches: tagsSchema,
   city: optionalStringSchema.nullable().default(null),
   contact_email: optionalStringSchema.nullable().default(null),

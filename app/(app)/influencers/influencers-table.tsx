@@ -15,20 +15,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { EmptyState } from "@/components/ui/empty-state";
-import { formatCompact } from "@/lib/currency";
 import { igUrl, normalizeIgHandle } from "@/lib/ig";
 
 export interface InfluencerRow {
   id: string;
   full_name: string | null;
   ig_handle: string;
-  ig_followers: number | null;
-  avg_reel_views: number | null;
+  ig_followers: string | null;
+  avg_reel_views: string | null;
   niches: string[];
   city: string | null;
-  rate_reel: number | null;
-  rate_story: number | null;
-  rate_post: number | null;
+  rate_reel: string | null;
+  rate_story: string | null;
+  rate_post: string | null;
   tags: string[];
   notes: string | null;
   campaign_count: number;
@@ -117,7 +116,7 @@ export function InfluencersTable({ rows, niches }: Props) {
       header: "Followers",
       cell: ({ row }) => (
         <span className="tabular-nums text-muted-foreground">
-          {formatCompact(row.original.ig_followers)}
+          {row.original.ig_followers || "—"}
         </span>
       ),
     },
@@ -126,7 +125,7 @@ export function InfluencersTable({ rows, niches }: Props) {
       header: "Avg reels",
       cell: ({ row }) => (
         <span className="tabular-nums text-muted-foreground">
-          {formatCompact(row.original.avg_reel_views)}
+          {row.original.avg_reel_views || "—"}
         </span>
       ),
     },
