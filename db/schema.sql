@@ -256,7 +256,7 @@ create table if not exists external_influencers (
   notes text,
   tags text[] default '{}',
   -- v5 creator-analysis fields (see db/v5-influencer-fields.sql)
-  content_pov text,
+  -- content_pov, casting_notes, analysis_depth dropped in v8.
   format_mix text check (format_mix is null or format_mix in ('reel_heavy','photo_heavy','mixed')),
   languages text[] default '{}',
   tone_tags text[] default '{}',
@@ -264,9 +264,7 @@ create table if not exists external_influencers (
   audience_age_band_est text check (audience_age_band_est is null or audience_age_band_est in ('18-24','25-34','35-44','mixed')),
   brand_collabs_visible text,
   red_flags text,
-  casting_notes text,
   events_other text,
-  analysis_depth text check (analysis_depth is null or analysis_depth in ('not_analyzed','tier_1','tier_2')) default 'not_analyzed',
   last_analyzed_at date,
   analyzed_by text,
   created_at timestamptz default now()
@@ -274,7 +272,8 @@ create table if not exists external_influencers (
 create index if not exists external_influencers_ig_handle_idx on external_influencers(lower(ig_handle));
 create index if not exists external_influencers_niches_gin on external_influencers using gin (niches);
 -- v5: idempotent column adds for existing projects.
-alter table external_influencers add column if not exists content_pov text;
+-- content_pov, casting_notes, analysis_depth were added here in v5 and dropped
+-- in v8 — do not re-add them.
 alter table external_influencers add column if not exists format_mix text;
 alter table external_influencers add column if not exists languages text[] default '{}';
 alter table external_influencers add column if not exists tone_tags text[] default '{}';
@@ -282,9 +281,7 @@ alter table external_influencers add column if not exists production_quality tex
 alter table external_influencers add column if not exists audience_age_band_est text;
 alter table external_influencers add column if not exists brand_collabs_visible text;
 alter table external_influencers add column if not exists red_flags text;
-alter table external_influencers add column if not exists casting_notes text;
 alter table external_influencers add column if not exists events_other text;
-alter table external_influencers add column if not exists analysis_depth text default 'not_analyzed';
 alter table external_influencers add column if not exists last_analyzed_at date;
 alter table external_influencers add column if not exists analyzed_by text;
 -- v6 (see db/v6-rates-and-management.sql for the int→text conversion).
@@ -310,6 +307,12 @@ begin
     alter table external_influencers alter column avg_reel_views type text using avg_reel_views::text;
   end if;
 end $$;
+-- v8: drop unused analysis fields (see db/v8-drop-removed-analysis-fields.sql).
+alter table external_influencers drop constraint if exists ext_inf_analysis_depth_check;
+drop index if exists external_influencers_analysis_depth_idx;
+alter table external_influencers drop column if exists content_pov;
+alter table external_influencers drop column if exists casting_notes;
+alter table external_influencers drop column if exists analysis_depth;
 
 create table if not exists campaigns (
   id uuid primary key default gen_random_uuid(),

@@ -8,6 +8,10 @@ import { InfluencersTable, type InfluencerRow } from "./influencers-table";
 
 export const metadata = { title: "Influencers" };
 
+function hasText(v: string | null | undefined): boolean {
+  return typeof v === "string" && v.trim().length > 0;
+}
+
 export default async function InfluencersPage() {
   await requireProfile();
   const supabase = await createClient();
@@ -23,6 +27,13 @@ export default async function InfluencersPage() {
     const cos =
       (i as { campaign_outreaches?: Array<{ updated_at: string }> }).campaign_outreaches ?? [];
     const lastActivity = cos.map((c) => c.updated_at).sort().pop();
+    // Commercial status is derived: any rate filled (collab/non-collab/story/post)
+    // counts as Received. Otherwise Pending.
+    const hasAnyRate =
+      hasText(i.rate_reel) ||
+      hasText(i.rate_reel_non_collab) ||
+      hasText(i.rate_story) ||
+      hasText(i.rate_post);
     return {
       id: i.id,
       full_name: i.full_name,
@@ -36,6 +47,7 @@ export default async function InfluencersPage() {
       rate_post: i.rate_post,
       tags: i.tags ?? [],
       notes: i.notes,
+      commercial_status: hasAnyRate ? "received" : "pending",
       campaign_count: cos.length,
       last_activity: lastActivity ?? null,
     };

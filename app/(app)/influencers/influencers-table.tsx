@@ -17,6 +17,8 @@ import {
 import { EmptyState } from "@/components/ui/empty-state";
 import { igUrl, normalizeIgHandle } from "@/lib/ig";
 
+export type CommercialStatus = "pending" | "received";
+
 export interface InfluencerRow {
   id: string;
   full_name: string | null;
@@ -30,6 +32,8 @@ export interface InfluencerRow {
   rate_post: string | null;
   tags: string[];
   notes: string | null;
+  /** Derived: any rate filled → "received", else "pending". Computed on the server. */
+  commercial_status: CommercialStatus;
   campaign_count: number;
   last_activity: string | null;
 }
@@ -45,6 +49,7 @@ export function InfluencersTable({ rows, niches }: Props) {
   const [niche, setNiche] = useState<string>("all");
   const [city, setCity] = useState<string>("all");
   const [tag, setTag] = useState<string>("all");
+  const [commercials, setCommercials] = useState<"all" | CommercialStatus>("all");
 
   const cities = useMemo(
     () =>
@@ -84,6 +89,7 @@ export function InfluencersTable({ rows, niches }: Props) {
       !r.tags.some((t) => t.toLowerCase() === tag.toLowerCase())
     )
       return false;
+    if (commercials !== "all" && r.commercial_status !== commercials) return false;
     return true;
   });
 
@@ -173,6 +179,18 @@ export function InfluencersTable({ rows, niches }: Props) {
         </div>
       ),
     },
+    {
+      accessorKey: "commercial_status",
+      header: "Commercials",
+      cell: ({ row }) => (
+        <Badge
+          variant={row.original.commercial_status === "received" ? "success" : "default"}
+          className="capitalize"
+        >
+          {row.original.commercial_status}
+        </Badge>
+      ),
+    },
   ];
 
   return (
@@ -230,6 +248,19 @@ export function InfluencersTable({ rows, niches }: Props) {
                 </SelectItem>
               ))
             )}
+          </SelectContent>
+        </Select>
+        <Select
+          value={commercials}
+          onValueChange={(v) => setCommercials(v as "all" | CommercialStatus)}
+        >
+          <SelectTrigger className="w-36">
+            <SelectValue placeholder="Commercials" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All commercials</SelectItem>
+            <SelectItem value="pending">Pending</SelectItem>
+            <SelectItem value="received">Received</SelectItem>
           </SelectContent>
         </Select>
         <span className="ml-auto text-xs text-muted-foreground tabular-nums">

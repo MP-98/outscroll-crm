@@ -72,7 +72,6 @@ export function InfluencerForm({
       managed_by: null,
       notes: null,
       tags: [],
-      content_pov: null,
       format_mix: null,
       languages: [],
       tone_tags: [],
@@ -80,9 +79,7 @@ export function InfluencerForm({
       audience_age_band_est: null,
       brand_collabs_visible: null,
       red_flags: null,
-      casting_notes: null,
       events_other: null,
-      analysis_depth: "not_analyzed",
       last_analyzed_at: null,
       analyzed_by: null,
       ...initial,
@@ -280,14 +277,6 @@ export function InfluencerForm({
         <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           Content profile
         </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="content_pov">Content POV</Label>
-          <Input
-            id="content_pov"
-            placeholder="e.g. budget fashion hauls for college students"
-            {...form.register("content_pov")}
-          />
-        </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="space-y-1.5">
             <Label>Format mix</Label>
@@ -421,41 +410,12 @@ export function InfluencerForm({
         </div>
       </div>
 
-      {/* Casting notes */}
-      <div className="space-y-1.5">
-        <Label htmlFor="casting_notes">Casting notes</Label>
-        <Textarea
-          id="casting_notes"
-          rows={5}
-          placeholder="Free-form analyst notes — the real signal for pitching. Who they're a fit for, hooks, caveats…"
-          {...form.register("casting_notes")}
-        />
-      </div>
-
       {/* Analysis workflow */}
       <div className="space-y-3 pt-1">
         <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           Analysis workflow
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="space-y-1.5">
-            <Label>Analysis depth</Label>
-            <Select
-              value={form.watch("analysis_depth") ?? "not_analyzed"}
-              onValueChange={(v) =>
-                form.setValue("analysis_depth", v as FormValues["analysis_depth"])
-              }
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="not_analyzed">Not analyzed</SelectItem>
-                <SelectItem value="tier_1">Tier 1</SelectItem>
-                <SelectItem value="tier_2">Tier 2</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="space-y-1.5">
             <Label htmlFor="last_analyzed_at">Last analyzed</Label>
             <Input
